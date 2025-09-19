@@ -105,7 +105,7 @@ Create `.env` files in each directory:
 
 ```env
 # backend/.env
-AWS_REGION=us-east-1
+AWS_REGION=us-east-2
 DYNAMODB_TABLE=SafeHaven-Shelters
 SNS_TOPIC_ARN=arn:aws:sns:us-east-1:123456789:SafeHaven-Updates
 
@@ -115,7 +115,7 @@ FIRSTNET_ENDPOINT=https://firstnet.api.endpoint
 
 # dashboard/.env
 REACT_APP_API_URL=http://localhost:3001
-REACT_APP_AWS_REGION=us-east-1
+REACT_APP_AWS_REGION=us-east-2
 REACT_APP_AWS_LOCATION_MAP_NAME=safehaven-backend-map-dev
 ```
 
