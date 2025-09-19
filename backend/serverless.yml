@@ -1,0 +1,270 @@
+service: safehaven-backend
+
+frameworkVersion: '3'
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  region: us-east-1
+  stage: ${opt:stage, 'dev'}
+  environment:
+    STAGE: ${self:provider.stage}
+    SHELTERS_TABLE: ${self:service}-shelters-${self:provider.stage}
+    USERS_TABLE: ${self:service}-users-${self:provider.stage}
+    ALERTS_TABLE: ${self:service}-alerts-${self:provider.stage}
+    SHELTER_UPDATES_TOPIC: ${self:service}-shelter-updates-${self:provider.stage}
+    JWT_SECRET: ${env:JWT_SECRET, 'hackathon-jwt-secret-change-in-production'}
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource:
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.SHELTERS_TABLE}"
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.USERS_TABLE}"
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.ALERTS_TABLE}"
+    - Effect: Allow
+      Action:
+        - sns:Publish
+        - sns:Subscribe
+        - sns:Unsubscribe
+      Resource:
+        - "arn:aws:sns:${self:provider.region}:*:${self:provider.environment.SHELTER_UPDATES_TOPIC}"
+
+plugins:
+  - serverless-webpack
+  - serverless-offline
+
+custom:
+  webpack:
+    webpackConfig: webpack.config.js
+    includeModules: true
+  serverless-offline:
+    httpPort: 3001
+    babelOptions:
+      presets: ["env"]
+
+functions:
+  # Authentication Functions
+  authLogin:
+    handler: src/functions/auth/login.handler
+    events:
+      - http:
+          path: auth/login
+          method: post
+          cors: true
+
+  authRegister:
+    handler: src/functions/auth/register.handler
+    events:
+      - http:
+          path: auth/register
+          method: post
+          cors: true
+
+  # Shelter Management Functions
+  createShelter:
+    handler: src/functions/shelters/create.handler
+    events:
+      - http:
+          path: shelters
+          method: post
+          cors: true
+          authorizer:
+            name: authVerify
+            resultTtlInSeconds: 300
+
+  getShelters:
+    handler: src/functions/shelters/list.handler
+    events:
+      - http:
+          path: shelters
+          method: get
+          cors: true
+          authorizer:
+            name: authVerify
+            resultTtlInSeconds: 300
+
+  getShelter:
+    handler: src/functions/shelters/get.handler
+    events:
+      - http:
+          path: shelters/{shelterId}
+          method: get
+          cors: true
+          authorizer:
+            name: authVerify
+            resultTtlInSeconds: 300
+
+  updateShelterStatus:
+    handler: src/functions/shelters/updateStatus.handler
+    events:
+      - http:
+          path: shelters/{shelterId}/status
+          method: put
+          cors: true
+          authorizer:
+            name: authVerify
+            resultTtlInSeconds: 300
+
+  # Alert Management Functions
+  createAlert:
+    handler: src/functions/alerts/create.handler
+    events:
+      - http:
+          path: alerts
+          method: post
+          cors: true
+          authorizer:
+            name: authVerify
+            resultTtlInSeconds: 300
+
+  getAlerts:
+    handler: src/functions/alerts/list.handler
+    events:
+      - http:
+          path: alerts
+          method: get
+          cors: true
+          authorizer:
+            name: authVerify
+            resultTtlInSeconds: 300
+
+  # WebSocket Functions for Real-time Updates
+  websocketConnect:
+    handler: src/functions/websocket/connect.handler
+    events:
+      - websocket:
+          route: $connect
+
+  websocketDisconnect:
+    handler: src/functions/websocket/disconnect.handler
+    events:
+      - websocket:
+          route: $disconnect
+
+  websocketDefault:
+    handler: src/functions/websocket/default.handler
+    events:
+      - websocket:
+          route: $default
+
+  # Authorization Function
+  authVerify:
+    handler: src/functions/auth/verify.handler
+
+resources:
+  Resources:
+    # DynamoDB Tables
+    SheltersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.SHELTERS_TABLE}
+        AttributeDefinitions:
+          - AttributeName: shelterId
+            AttributeType: S
+          - AttributeName: status
+            AttributeType: S
+        KeySchema:
+          - AttributeName: shelterId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: StatusIndex
+            KeySchema:
+              - AttributeName: status
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+
+    UsersTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.USERS_TABLE}
+        AttributeDefinitions:
+          - AttributeName: userId
+            AttributeType: S
+          - AttributeName: email
+            AttributeType: S
+        KeySchema:
+          - AttributeName: userId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: EmailIndex
+            KeySchema:
+              - AttributeName: email
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+
+    AlertsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.ALERTS_TABLE}
+        AttributeDefinitions:
+          - AttributeName: alertId
+            AttributeType: S
+          - AttributeName: shelterId
+            AttributeType: S
+          - AttributeName: timestamp
+            AttributeType: N
+        KeySchema:
+          - AttributeName: alertId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: ShelterTimestampIndex
+            KeySchema:
+              - AttributeName: shelterId
+                KeyType: HASH
+              - AttributeName: timestamp
+                KeyType: RANGE
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+
+    # SNS Topic for Shelter Updates
+    ShelterUpdatesTopic:
+      Type: AWS::SNS::Topic
+      Properties:
+        TopicName: ${self:provider.environment.SHELTER_UPDATES_TOPIC}
+
+  Outputs:
+    ApiGatewayRestApiId:
+      Value:
+        Ref: ApiGatewayRestApi
+      Export:
+        Name: ${self:service}-${self:provider.stage}-api-id
+
+    ApiGatewayRestApiRootResourceId:
+      Value:
+        Fn::GetAtt:
+          - ApiGatewayRestApi
+          - RootResourceId
+      Export:
+        Name: ${self:service}-${self:provider.stage}-root-resource-id
+
+    ShelterUpdatesTopicArn:
+      Value:
+        Ref: ShelterUpdatesTopic
+      Export:
+        Name: ${self:service}-${self:provider.stage}-shelter-updates-topic-arn

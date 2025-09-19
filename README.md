@@ -42,103 +42,62 @@ SafeHaven Connect provides two integrated applications:
 - **Critical alerts** for urgent shelter situations
 - **Route optimization** to nearest available shelters
 
-## 🏗️ Technical Architecture
-
-SafeHaven Connect leverages AWS serverless architecture for maximum scalability and reliability:
+## 📁 Project Structure
 
 ```
-┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
-│   Shelter App   │    │   FirstNet       │    │ Responder App   │
-│   (Mobile)      │◄──►│   Network        │◄──►│ (Dashboard)     │
-└─────────────────┘    └──────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-                     ┌──────────────────┐
-                     │   AWS Cloud      │
-                     │                  │
-                     │  ┌─────────────┐ │
-                     │  │   API       │ │
-                     │  │  Gateway    │ │
-                     │  └─────────────┘ │
-                     │         │        │
-                     │  ┌─────────────┐ │
-                     │  │   Lambda    │ │
-                     │  │ Functions   │ │
-                     │  └─────────────┘ │
-                     │         │        │
-                     │  ┌─────────────┐ │
-                     │  │  DynamoDB   │ │
-                     │  └─────────────┘ │
-                     │         │        │
-                     │  ┌─────────────┐ │
-                     │  │  SNS/SQS    │ │
-                     │  │ Messaging   │ │
-                     │  └─────────────┘ │
-                     └──────────────────┘
+SafeHaven/
+├── 📱 mobile/               # React Native app (Shelter operators)
+│   ├── src/screens/        # App screens and navigation
+│   ├── src/components/     # Reusable UI components
+│   ├── src/services/       # API and data services
+│   ├── src/store/          # Redux state management
+│   └── src/types/          # TypeScript type definitions
+├── 🌐 dashboard/           # React web app (First responders)
+│   ├── src/pages/          # Main application pages
+│   ├── src/components/     # UI component library
+│   ├── src/services/       # Data fetching and APIs
+│   ├── src/hooks/          # Custom React hooks
+│   └── src/types/          # TypeScript definitions
+├── ⚡ backend/             # AWS serverless backend
+│   ├── src/functions/      # Lambda function handlers
+│   ├── src/services/       # Business logic services
+│   ├── src/models/         # Data models and types
+│   ├── src/utils/          # Utility functions
+│   └── infrastructure/     # AWS resource definitions
+├── 🔄 shared/              # Shared TypeScript types
+├── 📚 docs/                # Complete project documentation
+├── 🛠️ scripts/            # Build and deployment scripts
+└── 📋 Configuration files  # Package.json, environment, etc.
 ```
-
-### Core Technologies
-
-- **🚀 AWS Lambda** - Serverless compute for backend logic
-- **📊 Amazon DynamoDB** - Fast, scalable NoSQL database
-- **📡 Amazon SNS/SQS** - Real-time pub/sub messaging
-- **🔐 AWS API Gateway** - Secure API management
-- **🌐 FirstNet Network** - Priority public safety communications
-- **📱 React Native** - Cross-platform mobile development
-- **⚛️ React** - Web dashboard interface
 
 ## 🚀 Getting Started
+
+### ⚡ Quick Setup (Recommended)
+
+```bash
+# Clone the repository
+git clone https://github.com/49115566/SafeHaven.git
+cd SafeHaven
+
+# Run automated setup
+./scripts/setup.sh
+
+# Start development
+npm run dev
+```
+
+### 📖 Detailed Setup
+
+For detailed setup instructions and troubleshooting, see:
+- **[Development Guide](DEVELOPMENT.md)** - Complete developer workflow
+- **[Documentation](docs/README.md)** - Full project documentation
 
 ### Prerequisites
 
 - Node.js (v18 or higher)
 - AWS CLI configured
-- React Native development environment
+- React Native development environment (for mobile)
 - FirstNet device access (for testing)
-
-### Installation
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/SafeHaven/safehaven-connect.git
-   cd safehaven-connect
-   ```
-
-2. **Install dependencies**
-   ```bash
-   # Backend dependencies
-   cd backend
-   npm install
-   
-   # Mobile app dependencies
-   cd ../mobile
-   npm install
-   
-   # Dashboard dependencies
-   cd ../dashboard
-   npm install
-   ```
-
-3. **Configure AWS services**
-   ```bash
-   # Deploy AWS infrastructure
-   cd backend
-   npm run deploy
-   ```
-
-4. **Start development servers**
-   ```bash
-   # Start mobile app (iOS/Android)
-   cd mobile
-   npx react-native run-ios
-   # or
-   npx react-native run-android
-   
-   # Start web dashboard
-   cd dashboard
-   npm start
-   ```
 
 ### Environment Variables
 
@@ -267,9 +226,8 @@ We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.
 
 ## 📞 Support
 
-For questions or support, please contact us at:
-- Email: team@safehaven.example.com
-- GitHub Issues: [Create an issue](https://github.com/SafeHaven/safehaven-connect/issues)
+For questions or support related to this hackathon project, please contact Team SaveHaven:
+- GitHub Issues: [Create an issue](https://github.com/49115566/SafeHaven/issues)
 
 ---
 
