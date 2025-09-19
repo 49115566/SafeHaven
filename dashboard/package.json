@@ -60,7 +60,10 @@
     "postcss": "^8.4.31",
     "eslint": "^8.52.0",
     "eslint-plugin-react": "^7.33.2",
-    "eslint-plugin-react-hooks": "^4.6.0"
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/jest-dom": "^6.1.4",
+    "@testing-library/user-event": "^14.5.1"
   },
   "proxy": "http://localhost:3001",
   "engines": {
