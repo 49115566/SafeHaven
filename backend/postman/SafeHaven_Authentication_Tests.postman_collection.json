@@ -1,0 +1,584 @@
+{
+  "info": {
+    "name": "SafeHaven Authentication API",
+    "description": "Complete API testing collection for SafeHaven Connect authentication endpoints",
+    "version": "1.0.0",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{auth_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Global variables for testing",
+          "pm.globals.set('base_url', 'https://your-api-gateway-url.execute-api.us-east-2.amazonaws.com/dev');",
+          "pm.globals.set('test_email', 'test-' + Date.now() + '@safehaven.org');",
+          "pm.globals.set('test_password', 'TestPassword123!');",
+          "",
+          "// Generate random shelter data",
+          "pm.globals.set('shelter_name', 'Test Shelter ' + Date.now());",
+          "pm.globals.set('shelter_latitude', (Math.random() * 180 - 90).toFixed(6));",
+          "pm.globals.set('shelter_longitude', (Math.random() * 360 - 180).toFixed(6));"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "https://your-api-gateway-url.execute-api.us-east-2.amazonaws.com/dev",
+      "type": "string"
+    },
+    {
+      "key": "auth_token",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication Tests",
+      "item": [
+        {
+          "name": "01 - Register Shelter Operator",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Registration successful', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has correct structure', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success', true);",
+                  "    pm.expect(responseJson).to.have.property('data');",
+                  "    pm.expect(responseJson.data).to.have.property('user');",
+                  "    pm.expect(responseJson.data).to.have.property('token');",
+                  "});",
+                  "",
+                  "pm.test('User data is correct', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const user = responseJson.data.user;",
+                  "    ",
+                  "    pm.expect(user.email).to.equal(pm.globals.get('test_email'));",
+                  "    pm.expect(user.role).to.equal('shelter_operator');",
+                  "    pm.expect(user).to.have.property('shelterId');",
+                  "    pm.expect(user.isActive).to.be.true;",
+                  "});",
+                  "",
+                  "pm.test('JWT token is valid format', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const token = responseJson.data.token;",
+                  "    ",
+                  "    pm.expect(token).to.be.a('string');",
+                  "    pm.expect(token.split('.')).to.have.lengthOf(3);",
+                  "    ",
+                  "    // Store token for subsequent requests",
+                  "    pm.globals.set('auth_token', token);",
+                  "    pm.globals.set('user_id', responseJson.data.user.userId);",
+                  "    pm.globals.set('shelter_id', responseJson.data.user.shelterId);",
+                  "});",
+                  "",
+                  "pm.test('Password not exposed in response', function () {",
+                  "    const responseText = pm.response.text();",
+                  "    pm.expect(responseText).to.not.include('password');",
+                  "    pm.expect(responseText).to.not.include('passwordHash');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\",\n  \"role\": \"shelter_operator\",\n  \"profile\": {\n    \"firstName\": \"Test\",\n    \"lastName\": \"Operator\",\n    \"phone\": \"+15551234567\",\n    \"organization\": \"Test Emergency Shelter\"\n  },\n  \"shelterInfo\": {\n    \"name\": \"{{shelter_name}}\",\n    \"location\": {\n      \"latitude\": {{shelter_latitude}},\n      \"longitude\": {{shelter_longitude}},\n      \"address\": \"123 Test Street, Test City, TC 12345\"\n    },\n    \"capacity\": {\n      \"maximum\": 100\n    },\n    \"contactInfo\": {\n      \"phone\": \"+15551234567\",\n      \"email\": \"contact@testshelter.org\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "02 - Register Duplicate User (Should Fail)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Duplicate registration rejected', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Error message is appropriate', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.false;",
+                  "    pm.expect(responseJson.error.message).to.include('already exists');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\",\n  \"role\": \"shelter_operator\",\n  \"profile\": {\n    \"firstName\": \"Duplicate\",\n    \"lastName\": \"User\"\n  },\n  \"shelterInfo\": {\n    \"name\": \"Duplicate Shelter\",\n    \"location\": {\n      \"latitude\": 40.7128,\n      \"longitude\": -74.0060,\n      \"address\": \"123 Duplicate St, NY, NY\"\n    },\n    \"capacity\": {\n      \"maximum\": 50\n    },\n    \"contactInfo\": {\n      \"phone\": \"+15559999999\",\n      \"email\": \"duplicate@test.org\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "03 - Login with Valid Credentials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Login successful', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has correct structure', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success', true);",
+                  "    pm.expect(responseJson.data).to.have.property('user');",
+                  "    pm.expect(responseJson.data).to.have.property('token');",
+                  "});",
+                  "",
+                  "pm.test('User data matches registration', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const user = responseJson.data.user;",
+                  "    ",
+                  "    pm.expect(user.email).to.equal(pm.globals.get('test_email'));",
+                  "    pm.expect(user.userId).to.equal(pm.globals.get('user_id'));",
+                  "    pm.expect(user.shelterId).to.equal(pm.globals.get('shelter_id'));",
+                  "});",
+                  "",
+                  "pm.test('New JWT token issued', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const newToken = responseJson.data.token;",
+                  "    const oldToken = pm.globals.get('auth_token');",
+                  "    ",
+                  "    pm.expect(newToken).to.be.a('string');",
+                  "    pm.expect(newToken).to.not.equal(oldToken);",
+                  "    ",
+                  "    // Update token for subsequent requests",
+                  "    pm.globals.set('auth_token', newToken);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"{{test_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "04 - Login with Invalid Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Invalid login rejected', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Error message is secure', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.false;",
+                  "    pm.expect(responseJson.error.message).to.equal('Invalid email or password');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"WrongPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "05 - Login with Invalid Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Invalid email rejected', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Error message is secure', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.false;",
+                  "    pm.expect(responseJson.error.message).to.equal('Invalid email or password');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"nonexistent@safehaven.org\",\n  \"password\": \"{{test_password}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Authorization Tests",
+      "item": [
+        {
+          "name": "06 - Access Protected Endpoint with Valid Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Protected endpoint accessible with valid token', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response contains shelter data', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('success', true);",
+                  "    pm.expect(responseJson.data).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{auth_token}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/shelters",
+              "host": ["{{base_url}}"],
+              "path": ["shelters"]
+            }
+          }
+        },
+        {
+          "name": "07 - Access Protected Endpoint without Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Unauthorized access rejected', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates authorization required', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.message).to.include('Unauthorized');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/shelters",
+              "host": ["{{base_url}}"],
+              "path": ["shelters"]
+            }
+          }
+        },
+        {
+          "name": "08 - Access Protected Endpoint with Invalid Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Invalid token rejected', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Error message indicates authorization failure', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.message).to.include('Unauthorized');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "invalid.jwt.token",
+                  "type": "string"
+                }
+              ]
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/shelters",
+              "host": ["{{base_url}}"],
+              "path": ["shelters"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Validation Tests",
+      "item": [
+        {
+          "name": "09 - Register with Weak Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Weak password rejected', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Validation error message provided', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.false;",
+                  "    pm.expect(responseJson.error.message).to.include('Validation failed');",
+                  "    pm.expect(responseJson.error.details).to.be.an('array');",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"weak@test.org\",\n  \"password\": \"weak\",\n  \"role\": \"shelter_operator\",\n  \"profile\": {\n    \"firstName\": \"Test\",\n    \"lastName\": \"User\"\n  },\n  \"shelterInfo\": {\n    \"name\": \"Test Shelter\",\n    \"location\": {\n      \"latitude\": 40.7128,\n      \"longitude\": -74.0060,\n      \"address\": \"123 Test St, NY, NY\"\n    },\n    \"capacity\": {\n      \"maximum\": 50\n    },\n    \"contactInfo\": {\n      \"phone\": \"+15551234567\",\n      \"email\": \"contact@test.org\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "10 - Register with Invalid Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Invalid email rejected', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Email validation error provided', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.success).to.be.false;",
+                  "    pm.expect(responseJson.error.details).to.be.an('array');",
+                  "    const hasEmailError = responseJson.error.details.some(error => ",
+                  "        error.includes('email') || error.includes('Email'));",
+                  "    pm.expect(hasEmailError).to.be.true;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"not-an-email\",\n  \"password\": \"ValidPassword123!\",\n  \"role\": \"shelter_operator\",\n  \"profile\": {\n    \"firstName\": \"Test\",\n    \"lastName\": \"User\"\n  },\n  \"shelterInfo\": {\n    \"name\": \"Test Shelter\",\n    \"location\": {\n      \"latitude\": 40.7128,\n      \"longitude\": -74.0060,\n      \"address\": \"123 Test St, NY, NY\"\n    },\n    \"capacity\": {\n      \"maximum\": 50\n    },\n    \"contactInfo\": {\n      \"phone\": \"+15551234567\",\n      \"email\": \"contact@test.org\"\n    }\n  }\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "register"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Rate Limiting Tests",
+      "item": [
+        {
+          "name": "11 - Test Rate Limiting (Multiple Failed Logins)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// This test will make multiple rapid login attempts",
+                  "pm.globals.set('attempt_count', 0);"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const attemptCount = parseInt(pm.globals.get('attempt_count')) + 1;",
+                  "pm.globals.set('attempt_count', attemptCount);",
+                  "",
+                  "if (attemptCount <= 10) {",
+                  "    pm.test('Attempt ' + attemptCount + ' processed', function () {",
+                  "        pm.expect(pm.response.code).to.be.oneOf([401, 429]);",
+                  "    });",
+                  "    ",
+                  "    // Continue making requests until rate limited",
+                  "    if (pm.response.code !== 429 && attemptCount < 10) {",
+                  "        setTimeout(() => {",
+                  "            postman.setNextRequest('11 - Test Rate Limiting (Multiple Failed Logins)');",
+                  "        }, 100);",
+                  "    }",
+                  "} else {",
+                  "    pm.test('Rate limiting applied after multiple attempts', function () {",
+                  "        pm.response.to.have.status(429);",
+                  "    });",
+                  "    ",
+                  "    pm.test('Rate limit error message provided', function () {",
+                  "        const responseJson = pm.response.json();",
+                  "        pm.expect(responseJson.error.message).to.include('Too many');",
+                  "        pm.expect(responseJson.error.details).to.have.property('resetTime');",
+                  "    });",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{test_email}}\",\n  \"password\": \"WrongPassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["auth", "login"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}
