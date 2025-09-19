@@ -107,7 +107,7 @@ Create `.env` files in each directory:
 # backend/.env
 AWS_REGION=us-east-2
 DYNAMODB_TABLE=SafeHaven-Shelters
-SNS_TOPIC_ARN=arn:aws:sns:us-east-1:123456789:SafeHaven-Updates
+SNS_TOPIC_ARN=arn:aws:sns:us-east-2:123456789:SafeHaven-Updates
 
 # mobile/.env
 API_BASE_URL=https://api.safehaven.example.com
