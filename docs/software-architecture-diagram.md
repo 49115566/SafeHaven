@@ -113,7 +113,7 @@ SafeHaven Connect follows modern cloud-native architecture principles optimized 
               ┌─────────────────────────┼─────────────────────────┐
               │                         │                         │
     ┌─────────────────┐      ┌─────────────────┐      ┌─────────────────┐
-    │   Google Maps   │      │    FirstNet     │      │   AWS Cloud     │
+    │ AWS Location   │      │    FirstNet     │      │   AWS Cloud     │
     │      API        │      │    Network      │      │   Services      │
     │                 │      │                 │      │                 │
     │ • Mapping       │      │ • Priority      │      │ • Compute       │
@@ -151,7 +151,7 @@ SafeHaven Connect follows modern cloud-native architecture principles optimized 
 **Supporting Systems:**
 - **FirstNet Network**: Provides reliable, priority communication
 - **AWS Cloud**: Hosts scalable backend infrastructure
-- **Google Maps**: Provides mapping and location services
+- **AWS Location Service**: Provides mapping and location services with Esri data
 
 ---
 
@@ -263,14 +263,14 @@ SafeHaven Connect follows modern cloud-native architecture principles optimized 
 - **Alert Management Panel**: Real-time alert handling and response
 
 **🗺️ Component Layer:**
-- **Interactive Map**: Google Maps integration with custom markers
+- **Interactive Map**: AWS Location Service integration with MapLibre GL JS and custom markers
 - **Filter Controls**: Search and filter functionality
 - **Real-time Status Indicators**: Live status updates and notifications
 
 **🔄 Service Layer:**
 - **WebSocket Service**: Real-time data streaming
 - **HTTP API Client**: RESTful API communication
-- **Map API Service**: Google Maps integration and geocoding
+- **Location Service**: AWS Location Service integration for mapping and geocoding
 
 ---
 

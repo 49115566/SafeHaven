@@ -1,6 +1,38 @@
 import React from 'react';
+import AwsLocationMap from '../components/AwsLocationMap';
 
 export default function DashboardPage() {
+  // Sample shelter data for demonstration
+  const sampleShelters = [
+    {
+      id: '1',
+      name: 'Downtown Emergency Shelter',
+      latitude: 40.7128,
+      longitude: -74.0060,
+      status: 'operational' as const,
+      capacity: 150,
+      currentOccupancy: 89,
+    },
+    {
+      id: '2', 
+      name: 'Community Center North',
+      latitude: 40.7589,
+      longitude: -73.9851,
+      status: 'limited' as const,
+      capacity: 80,
+      currentOccupancy: 75,
+    },
+    {
+      id: '3',
+      name: 'School Gymnasium South',
+      latitude: 40.6892,
+      longitude: -74.0445,
+      status: 'down' as const,
+      capacity: 120,
+      currentOccupancy: 0,
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
@@ -11,9 +43,7 @@ export default function DashboardPage() {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow p-6">
               <h2 className="text-xl font-semibold mb-4">Live Shelter Map</h2>
-              <div className="h-96 bg-gray-100 rounded flex items-center justify-center">
-                <p className="text-gray-500">Map component will be implemented here</p>
-              </div>
+              <AwsLocationMap shelters={sampleShelters} className="h-96" />
             </div>
           </div>
           <div className="space-y-6">

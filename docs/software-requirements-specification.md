@@ -125,7 +125,7 @@ SafeHaven Connect is a new, standalone system that integrates with:
 #### 2.6.2 Dependencies
 - AWS service availability and configuration
 - FirstNet network access for testing
-- Third-party mapping services (Google Maps API)
+- AWS Location Service for mapping and geocoding
 
 ---
 

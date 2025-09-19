@@ -65,8 +65,8 @@ npm run dev:mobile
 ## ⚙️ Environment Configuration
 
 - **Backend**: Configure AWS credentials and region
-- **Dashboard**: Add Google Maps API key to `dashboard/.env`
-- **Mobile**: No additional config needed for development
+- **Dashboard**: AWS Location Service integrated (no additional config needed)
+- **Mobile**: AWS Location Service integrated (no additional config needed)
 
 ## 🏆 Hackathon-Ready Features
 
@@ -100,7 +100,7 @@ npm run dev:mobile
 
 1. **Authentication**: JWT implementation (basic structure ready)
 2. **Real-time Features**: WebSocket connections for live updates
-3. **Maps Integration**: Google Maps API implementation
+3. **Maps Integration**: AWS Location Service with MapLibre GL JS
 4. **Notification System**: Push notifications and SMS alerts
 5. **Data Models**: Complete DynamoDB schema implementation
 

@@ -48,7 +48,7 @@ SafeHaven/
 ### Immediate Actions (Day 1)
 1. **Run Setup**: `./scripts/setup.sh`
 2. **Configure AWS**: Add your AWS credentials
-3. **Add Maps API**: Get Google Maps API key for dashboard
+3. **Configure AWS**: Set up AWS credentials with Location Service access
 4. **Start Coding**: `npm run dev` to begin development
 
 ### Team Distribution
@@ -104,7 +104,7 @@ Your project already looks like a production-ready application with proper organ
 - [ ] Shelter CRUD operations  
 - [ ] Real-time status updates via WebSocket
 - [ ] Alert management and notifications
-- [ ] Interactive mapping with Google Maps
+- [ ] Interactive mapping with AWS Location Service
 - [ ] Offline data persistence
 - [ ] Push notifications
 

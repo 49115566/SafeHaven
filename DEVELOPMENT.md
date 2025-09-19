@@ -71,10 +71,12 @@ cp .env.example backend/.env
 
 ### 2. Dashboard Setup
 ```bash
-# Add Google Maps API key
-cp .env.example dashboard/.env
-# Edit dashboard/.env:
-REACT_APP_MAPS_API_KEY=your_api_key_here
+# Configure AWS Location Service (no separate API key needed)
+cp ../.env.example .env
+
+# AWS Location Service resources will be created automatically via serverless.yml
+# Map Name: safehaven-backend-map-dev 
+# Place Index: safehaven-backend-places-dev
 ```
 
 ### 3. Mobile Setup

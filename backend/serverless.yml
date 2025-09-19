@@ -13,6 +13,8 @@ provider:
     USERS_TABLE: ${self:service}-users-${self:provider.stage}
     ALERTS_TABLE: ${self:service}-alerts-${self:provider.stage}
     SHELTER_UPDATES_TOPIC: ${self:service}-shelter-updates-${self:provider.stage}
+    AWS_LOCATION_MAP_NAME: ${self:service}-map-${self:provider.stage}
+    AWS_LOCATION_PLACE_INDEX: ${self:service}-places-${self:provider.stage}
     JWT_SECRET: ${env:JWT_SECRET, 'hackathon-jwt-secret-change-in-production'}
   iamRoleStatements:
     - Effect: Allow
@@ -34,6 +36,15 @@ provider:
         - sns:Unsubscribe
       Resource:
         - "arn:aws:sns:${self:provider.region}:*:${self:provider.environment.SHELTER_UPDATES_TOPIC}"
+    - Effect: Allow
+      Action:
+        - geo:GetMap*
+        - geo:SearchPlaceIndex*
+        - geo:CalculateRoute*
+        - geo:BatchGetGeofence*
+      Resource:
+        - "arn:aws:geo:${self:provider.region}:*:map/${self:provider.environment.AWS_LOCATION_MAP_NAME}"
+        - "arn:aws:geo:${self:provider.region}:*:place-index/${self:provider.environment.AWS_LOCATION_PLACE_INDEX}"
 
 plugins:
   - serverless-webpack
@@ -110,6 +121,26 @@ functions:
           authorizer:
             name: authVerify
             resultTtlInSeconds: 300
+
+  # Location Service Functions
+  searchPlaces:
+    handler: src/functions/location/searchPlaces.handler
+    events:
+      - http:
+          path: location/search
+          method: post
+          cors: true
+          authorizer:
+            name: authVerify
+            resultTtlInSeconds: 300
+
+  getMapStyle:
+    handler: src/functions/location/getMapStyle.handler
+    events:
+      - http:
+          path: location/mapstyle
+          method: get
+          cors: true
 
   # Alert Management Functions
   createAlert:
@@ -247,6 +278,25 @@ resources:
       Type: AWS::SNS::Topic
       Properties:
         TopicName: ${self:provider.environment.SHELTER_UPDATES_TOPIC}
+
+    # AWS Location Service Map
+    LocationMap:
+      Type: AWS::Location::Map
+      Properties:
+        MapName: ${self:provider.environment.AWS_LOCATION_MAP_NAME}
+        Configuration:
+          Style: VectorEsriStreets
+        Description: "SafeHaven emergency shelter mapping"
+        PricingPlan: RequestBasedUsage
+
+    # AWS Location Service Place Index
+    PlaceIndex:
+      Type: AWS::Location::PlaceIndex
+      Properties:
+        IndexName: ${self:provider.environment.AWS_LOCATION_PLACE_INDEX}
+        DataSource: Esri
+        Description: "SafeHaven place search and geocoding"
+        PricingPlan: RequestBasedUsage
 
   Outputs:
     ApiGatewayRestApiId:

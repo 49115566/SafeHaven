@@ -114,8 +114,9 @@ API_BASE_URL=https://api.safehaven.example.com
 FIRSTNET_ENDPOINT=https://firstnet.api.endpoint
 
 # dashboard/.env
-REACT_APP_API_URL=https://api.safehaven.example.com
-REACT_APP_MAPS_API_KEY=your_maps_api_key
+REACT_APP_API_URL=http://localhost:3001
+REACT_APP_AWS_REGION=us-east-1
+REACT_APP_AWS_LOCATION_MAP_NAME=safehaven-backend-map-dev
 ```
 
 ## 🧪 Testing

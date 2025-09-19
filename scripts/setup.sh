@@ -72,7 +72,7 @@ echo "Setting up dashboard..."
 cd dashboard
 if [ ! -f .env ]; then
     cp ../.env.example .env
-    echo "📝 Dashboard .env file created. Please add Google Maps API key."
+    echo "📝 Dashboard .env file created."
 fi
 npm install
 # Create index.css if it doesn't exist
@@ -86,7 +86,7 @@ echo "🎉 Setup complete!"
 echo ""
 echo "⚠️  Important Setup Notes:"
 echo "1. Configure AWS credentials: aws configure"
-echo "2. Add Google Maps API key to dashboard/.env"
+echo "2. Configure AWS credentials: aws configure (includes Location Service access)"
 echo "3. For mobile development, install Expo CLI: npm install -g @expo/cli"
 echo ""
 echo "🚀 Quick Start Commands:"
