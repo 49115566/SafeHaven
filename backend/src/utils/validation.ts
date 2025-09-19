@@ -146,3 +146,37 @@ export function validateAlertCreation(data: any): ValidationResult {
     errors
   };
 }
+
+export function validateAlertAcknowledgment(data: any): ValidationResult {
+  const errors: string[] = [];
+
+  if (!data.responderId || typeof data.responderId !== 'string') {
+    errors.push('Responder ID is required');
+  }
+
+  if (data.estimatedResponseTime && typeof data.estimatedResponseTime !== 'string') {
+    errors.push('Estimated response time must be a string');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+}
+
+export function validateAlertResolution(data: any): ValidationResult {
+  const errors: string[] = [];
+
+  if (!data.responderId || typeof data.responderId !== 'string') {
+    errors.push('Responder ID is required');
+  }
+
+  if (!data.resolution || typeof data.resolution !== 'string' || data.resolution.trim().length === 0) {
+    errors.push('Resolution description is required and must be a non-empty string');
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+}

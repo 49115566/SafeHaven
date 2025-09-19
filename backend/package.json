@@ -24,7 +24,8 @@
     "bcryptjs": "^2.4.3",
     "joi": "^17.11.0",
     "jsonwebtoken": "^9.0.2",
-    "uuid": "^9.0.1"
+    "uuid": "^9.0.1",
+    "safehaven-shared": "file:../shared"
   },
   "devDependencies": {
     "@types/aws-lambda": "^8.10.152",

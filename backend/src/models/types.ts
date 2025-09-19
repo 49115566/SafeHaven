@@ -1,31 +1,5 @@
-export interface Shelter {
-  shelterId: string;
-  name: string;
-  location: {
-    latitude: number;
-    longitude: number;
-    address: string;
-  };
-  capacity: {
-    current: number;
-    maximum: number;
-  };
-  resources: {
-    food: ResourceStatus;
-    water: ResourceStatus;
-    medical: ResourceStatus;
-    bedding: ResourceStatus;
-  };
-  status: ShelterStatus;
-  operatorId: string;
-  contactInfo: {
-    phone: string;
-    email: string;
-  };
-  urgentNeeds: string[];
-  lastUpdated: string; // ISO timestamp
-  createdAt: string; // ISO timestamp
-}
+// Re-export shared types for consistency
+export * from 'safehaven-shared';
 
 export interface ShelterStatusUpdate {
   shelterId: string;

@@ -42,9 +42,11 @@ export default function MobileShelterMap({ shelters = [], style }: MobileShelter
         });
 
         const response = await locationClient.send(styleCommand);
-        const styleJson = JSON.parse(atob(response.Blob as string));
-        
-        setMapStyle(styleJson);
+        if (response.Blob) {
+          const blobString = response.Blob as unknown as string;
+          const styleJson = JSON.parse(atob(blobString));
+          setMapStyle(styleJson);
+        }
         setIsLoading(false);
       } catch (err) {
         console.error('Error loading AWS Location Service style:', err);
@@ -91,7 +93,6 @@ export default function MobileShelterMap({ shelters = [], style }: MobileShelter
     <View style={[styles.container, style]}>
       <MapLibreGL.MapView
         style={styles.map}
-        styleJSON={JSON.stringify(mapStyle)}
         logoEnabled={false}
         attributionEnabled={true}
       >

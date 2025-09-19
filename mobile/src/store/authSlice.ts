@@ -1,5 +1,5 @@
 import { createSlice, createAsyncThunk, PayloadAction } from '@reduxjs/toolkit';
-import { AuthState, User } from '../types';
+import { AuthState, User, UserRole } from '../types';
 import { authService } from '../services/authService';
 
 // Async thunks
@@ -71,7 +71,12 @@ const authSlice = createSlice({
       })
       .addCase(loginUser.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload.user;
+        state.user = {
+          ...action.payload.user,
+          role: action.payload.user.role as UserRole,
+          isActive: true,
+          createdAt: new Date().toISOString()
+        };
         state.token = action.payload.token;
         state.isAuthenticated = true;
         state.error = null;
@@ -88,7 +93,12 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.isLoading = false;
-        state.user = action.payload.user;
+        state.user = {
+          ...action.payload.user,
+          role: action.payload.user.role as UserRole,
+          isActive: true,
+          createdAt: new Date().toISOString()
+        };
         state.token = action.payload.token;
         state.isAuthenticated = true;
         state.error = null;

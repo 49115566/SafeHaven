@@ -47,17 +47,11 @@ provider:
         - "arn:aws:geo:${self:provider.region}:*:place-index/${self:provider.environment.AWS_LOCATION_PLACE_INDEX}"
 
 plugins:
-  - serverless-webpack
   - serverless-offline
 
 custom:
-  webpack:
-    webpackConfig: webpack.config.js
-    includeModules: true
   serverless-offline:
     httpPort: 3001
-    babelOptions:
-      presets: ["env"]
 
 functions:
   # Authentication Functions
@@ -165,24 +159,46 @@ functions:
             name: authVerify
             resultTtlInSeconds: 300
 
-  # WebSocket Functions for Real-time Updates
-  websocketConnect:
-    handler: src/functions/websocket/connect.handler
+  acknowledgeAlert:
+    handler: src/functions/alerts/acknowledge.handler
     events:
-      - websocket:
-          route: $connect
+      - http:
+          path: alerts/{id}/acknowledge
+          method: put
+          cors: true
+          authorizer:
+            name: authVerify
+            resultTtlInSeconds: 300
 
-  websocketDisconnect:
-    handler: src/functions/websocket/disconnect.handler
+  resolveAlert:
+    handler: src/functions/alerts/resolve.handler
     events:
-      - websocket:
-          route: $disconnect
+      - http:
+          path: alerts/{id}/resolve
+          method: put
+          cors: true
+          authorizer:
+            name: authVerify
+            resultTtlInSeconds: 300
 
-  websocketDefault:
-    handler: src/functions/websocket/default.handler
-    events:
-      - websocket:
-          route: $default
+  # WebSocket Functions for Real-time Updates (temporarily disabled for dev)
+  # websocketConnect:
+  #   handler: src/functions/websocket/connect.handler
+  #   events:
+  #     - websocket:
+  #         route: $connect
+
+  # websocketDisconnect:
+  #   handler: src/functions/websocket/disconnect.handler
+  #   events:
+  #     - websocket:
+  #         route: $disconnect
+
+  # websocketDefault:
+  #   handler: src/functions/websocket/default.handler
+  #   events:
+  #     - websocket:
+  #         route: $default
 
   # Authorization Function
   authVerify:
