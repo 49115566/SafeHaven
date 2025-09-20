@@ -1,23 +1,26 @@
 
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { useDispatch, useSelector } from 'react-redux';
-import { loginUser, clearError } from '../store/authSlice';
-import { RootState } from '../store';
 import { useNavigation } from '@react-navigation/native';
 import type { StackNavigationProp } from '@react-navigation/stack';
+import Toast from 'react-native-toast-message';
+
+import { useAppDispatch, useAppSelector } from '../store';
+import { loginUser, clearError, setUser } from '../store/authSlice';
+import { setShelter } from '../store/shelterSlice';
+import { initializeDemoData } from '../utils/demoData';
+
 // Define navigation types
 type AuthStackParamList = {
   LoginScreen: undefined;
   RegistrationScreen: undefined;
   DashboardScreen: undefined;
 };
-import Toast from 'react-native-toast-message';
 
 export default function LoginScreen() {
-  const dispatch = useDispatch();
+  const dispatch = useAppDispatch();
   const navigation = useNavigation<StackNavigationProp<AuthStackParamList>>();
-  const { isLoading, error, isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const { isLoading, error, isAuthenticated } = useAppSelector((state) => state.auth);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -31,7 +34,7 @@ export default function LoginScreen() {
     if (isAuthenticated) {
       navigation.reset({ index: 0, routes: [{ name: 'DashboardScreen' as keyof AuthStackParamList }] });
     }
-  }, [error, isAuthenticated]);
+  }, [error, isAuthenticated, navigation, dispatch]);
 
   const validate = () => {
     if (!email || !password) {
@@ -44,7 +47,25 @@ export default function LoginScreen() {
 
   const handleLogin = () => {
     if (!validate()) return;
-  dispatch<any>(loginUser({ email, password }));
+    dispatch(loginUser({ email, password }));
+  };
+
+  // Demo login function for testing
+  const handleDemoLogin = () => {
+    const demoData = initializeDemoData();
+    
+    // Set demo user and shelter data
+    dispatch(setUser({
+      user: demoData.user,
+      token: demoData.token
+    }));
+    dispatch(setShelter(demoData.shelter));
+    
+    Toast.show({
+      type: 'success',
+      text1: 'Demo Mode',
+      text2: 'Logged in with demo data for testing'
+    });
   };
 
   return (
@@ -73,6 +94,11 @@ export default function LoginScreen() {
         <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={isLoading}>
           {isLoading ? <ActivityIndicator color="#fff" /> : <Text style={styles.buttonText}>Login</Text>}
         </TouchableOpacity>
+        
+        <TouchableOpacity style={styles.demoButton} onPress={handleDemoLogin}>
+          <Text style={styles.demoButtonText}>Demo Login (Testing)</Text>
+        </TouchableOpacity>
+        
         <TouchableOpacity onPress={() => navigation.navigate('RegistrationScreen' as keyof AuthStackParamList)}>
           <Text style={styles.link}>Don't have an account? Register</Text>
         </TouchableOpacity>
@@ -128,6 +154,18 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   buttonText: {
+    color: '#fff',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  demoButton: {
+    backgroundColor: '#059669',
+    borderRadius: 6,
+    padding: 14,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  demoButtonText: {
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 16,

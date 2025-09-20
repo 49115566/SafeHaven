@@ -217,13 +217,6 @@ SafeHaven Connect directly addresses **Challenge 2: Community Safety & Health In
 
 This project was developed for the Breaking Barriers hackathon hosted by AWS, AT&T, and Deloitte at Southern Methodist University (September 19-21, 2025). The hackathon focused on transforming the future of networks through agents and generative AI for FirstNet applications.
 
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
 
 ## 📞 Support
 

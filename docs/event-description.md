@@ -14,11 +14,4 @@ Design a novel application or service that utilizes FirstNet's dedicated public 
 • Create new ways for communities to interact with emergency services  
 Key dates  
 **August 21 \- September 18:** Submit your team's idea (up to 5 people per team) based on the challenge questions. Email generative-ai-hackathon-telco@amazon.com with:  
-• Subject: "Breaking Barriers: Public Safety & Network Intelligence Innovation"  
-• Team name  
-• Names of all participating developers  
-• Proposal (0.5-1 page) as attachment  
-Proposals will be accepted to attend the in-person event on a rolling basis. Spots are limited so don’t wait to apply\!  
-**September 2025:** Attend online Immersion Days hosted by AWS and partners to learn about generative AI technology on AWS.  
-**September 19 – September 21:** Hackathon days, culminating in the winners announcement on September 21st at 3PM.  
-View terms and conditions [here](https://pages.awscloud.com/rs/112-TZM-766/images/BreakingBarriersSMU%20%281%29.docx?version=1).  
+• Subject: "Breaking Barriers: Public Safety & Network Intelligence Innovation"   

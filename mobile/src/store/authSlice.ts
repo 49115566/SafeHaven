@@ -57,6 +57,13 @@ const authSlice = createSlice({
         state.user = { ...state.user, ...action.payload };
       }
     },
+    setUser: (state, action: PayloadAction<{ user: User; token: string }>) => {
+      state.user = action.payload.user;
+      state.token = action.payload.token;
+      state.isAuthenticated = true;
+      state.isLoading = false;
+      state.error = null;
+    },
     setOfflineMode: (state) => {
       // Handle offline authentication fallback
       state.isLoading = false;
@@ -118,5 +125,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { clearError, updateUserProfile, setOfflineMode } = authSlice.actions;
+export const { clearError, updateUserProfile, setUser, setOfflineMode } = authSlice.actions;
 export default authSlice.reducer;
