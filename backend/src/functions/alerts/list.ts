@@ -67,4 +67,5 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     console.error('Error fetching alerts:', error);
     return responseHelper.internalError('Failed to fetch alerts');
   }
+  
 };

@@ -5,7 +5,7 @@
   "private": true,
   "workspaces": [
     "backend",
-    "mobile", 
+    "mobile",
     "dashboard",
     "shared"
   ],
@@ -38,7 +38,8 @@
     "clean:dashboard": "cd dashboard && npm run clean"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "typescript": "^5.9.2"
   },
   "engines": {
     "node": ">=18.0.0",
