@@ -45,57 +45,57 @@ SafeHaven Connect follows modern cloud-native architecture principles optimized 
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Frontend Layer                          │
+│                        Frontend Layer                           │
 ├─────────────────────────────────────────────────────────────────┤
-│  Mobile App (React Native)  │   Dashboard (React + TypeScript) │
-│  • iOS/Android Compatible   │   • Modern Web Browsers          │
-│  • Offline Capability       │   • Real-time Updates            │
-│  • Push Notifications       │   • Interactive Maps             │
+│  Mobile App (React Native)  │   Dashboard (React + TypeScript)  │
+│  • iOS/Android Compatible   │   • Modern Web Browsers           │
+│  • Offline Capability       │   • Real-time Updates             │
+│  • Push Notifications       │   • Interactive Maps              │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│                      Communication Layer                       │
+│                      Communication Layer                        │
 ├─────────────────────────────────────────────────────────────────┤
-│              FirstNet Priority Network                         │
-│  • Dedicated Public Safety Bandwidth                           │
-│  • Priority and Preemption                                     │
-│  • Enhanced Coverage and Reliability                           │
+│              FirstNet Priority Network                          │
+│  • Dedicated Public Safety Bandwidth                            │
+│  • Priority and Preemption                                      │
+│  • Enhanced Coverage and Reliability                            │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│                         API Layer                              │
+│                         API Layer                               │
 ├─────────────────────────────────────────────────────────────────┤
-│                    AWS API Gateway                             │
-│  • REST APIs for CRUD operations                               │
-│  • WebSocket for real-time communication                       │
-│  • Authentication and Rate Limiting                            │
+│                    AWS API Gateway                              │
+│  • REST APIs for CRUD operations                                │
+│  • WebSocket for real-time communication                        │
+│  • Authentication and Rate Limiting                             │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│                       Business Logic                           │
+│                       Business Logic                            │
 ├─────────────────────────────────────────────────────────────────┤
-│                      AWS Lambda                                │
-│  • Authentication Service    │  • Alert Management Service     │
-│  • Shelter Management Service│  • Dashboard Data Service       │
-│  • Notification Service      │  • Integration Service          │
+│                      AWS Lambda                                 │
+│  • Authentication Service    │  • Alert Management Service      │
+│  • Shelter Management Service│  • Dashboard Data Service        │
+│  • Notification Service      │  • Integration Service           │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│                      Messaging Layer                           │
+│                      Messaging Layer                            │
 ├─────────────────────────────────────────────────────────────────┤
-│           Amazon SNS + SQS                                     │
-│  • Real-time Pub/Sub Messaging                                 │
-│  • Message Queuing and Delivery                                │
-│  • Fan-out to Multiple Subscribers                             │
+│           Amazon SNS + SQS                                      │
+│  • Real-time Pub/Sub Messaging                                  │
+│  • Message Queuing and Delivery                                 │
+│  • Fan-out to Multiple Subscribers                              │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Data Layer                              │
+│                        Data Layer                               │
 ├─────────────────────────────────────────────────────────────────┤
-│           Amazon DynamoDB                                      │
-│  • Shelters Table           │  • Alerts Table                  │
-│  • Users Table              │  • Sessions Table                │
-│  • Audit Logs Table         │  • Configuration Table           │
+│           Amazon DynamoDB                                       │
+│  • Shelters Table           │  • Alerts Table                   │
+│  • Users Table              │  • Sessions Table                 │
+│  • Audit Logs Table         │  • Configuration Table            │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -107,13 +107,13 @@ SafeHaven Connect follows modern cloud-native architecture principles optimized 
 
 ```
                     ┌─────────────────────────────────────────────┐
-                    │             External Systems               │
+                    │             External Systems                │
                     └─────────────────────────────────────────────┘
                                         │
               ┌─────────────────────────┼─────────────────────────┐
               │                         │                         │
     ┌─────────────────┐      ┌─────────────────┐      ┌─────────────────┐
-    │ AWS Location   │      │    FirstNet     │      │   AWS Cloud     │
+    │ AWS Location    │      │    FirstNet     │      │   AWS Cloud     │
     │      API        │      │    Network      │      │   Services      │
     │                 │      │                 │      │                 │
     │ • Mapping       │      │ • Priority      │      │ • Compute       │
@@ -161,29 +161,29 @@ SafeHaven Connect follows modern cloud-native architecture principles optimized 
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                    Shelter Command App (React Native)              │
+│                    Shelter Command App (React Native)               │
 ├─────────────────────────────────────────────────────────────────────┤
-│                         Presentation Layer                         │
+│                         Presentation Layer                          │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐      │
 │  │   Login/Auth    │  │  Status Update  │  │  Alert System   │      │
 │  │     Screen      │  │     Screen      │  │     Screen      │      │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘      │
 ├─────────────────────────────────────────────────────────────────────┤
-│                        Component Layer                             │
+│                        Component Layer                              │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐      │
 │  │  Capacity       │  │   Resource      │  │   Emergency     │      │
 │  │  Counter        │  │   Status        │  │    Button       │      │
 │  │  Component      │  │  Component      │  │   Component     │      │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘      │
 ├─────────────────────────────────────────────────────────────────────┤
-│                        Service Layer                               │
+│                        Service Layer                                │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐      │
 │  │      API        │  │   Offline       │  │  Notification   │      │
 │  │    Service      │  │    Storage      │  │    Service      │      │
 │  │                 │  │    Service      │  │                 │      │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘      │
 ├─────────────────────────────────────────────────────────────────────┤
-│                         Data Layer                                 │
+│                         Data Layer                                  │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐      │
 │  │   AsyncStorage  │  │     Redux       │  │     Network     │      │
 │  │   (Offline)     │  │     Store       │  │     Manager     │      │
@@ -218,30 +218,30 @@ SafeHaven Connect follows modern cloud-native architecture principles optimized 
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                  Responder Dashboard (React + TypeScript)          │
+│                  Responder Dashboard (React + TypeScript)           │
 ├─────────────────────────────────────────────────────────────────────┤
-│                         Presentation Layer                         │
+│                         Presentation Layer                          │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐      │
 │  │    Dashboard    │  │    Shelter      │  │     Alert       │      │
 │  │      View       │  │    Details      │  │   Management    │      │
 │  │                 │  │     Modal       │  │     Panel       │      │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘      │
 ├─────────────────────────────────────────────────────────────────────┤
-│                        Component Layer                             │
+│                        Component Layer                              │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐      │
 │  │   Interactive   │  │    Filter       │  │   Real-time     │      │
 │  │      Map        │  │    Controls     │  │   Status        │      │
 │  │   Component     │  │   Component     │  │   Indicators    │      │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘      │
 ├─────────────────────────────────────────────────────────────────────┤
-│                        Service Layer                               │
+│                        Service Layer                                │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐      │
 │  │   WebSocket     │  │     HTTP        │  │    Map API      │      │
 │  │    Service      │  │   API Client    │  │    Service      │      │
 │  │                 │  │                 │  │                 │      │
 │  └─────────────────┘  └─────────────────┘  └─────────────────┘      │
 ├─────────────────────────────────────────────────────────────────────┤
-│                         Data Layer                                 │
+│                         Data Layer                                  │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐      │
 │  │     React       │  │   Local Cache   │  │   Session       │      │
 │  │    Context      │  │   (5 minutes)   │  │   Storage       │      │
@@ -280,13 +280,13 @@ SafeHaven Connect follows modern cloud-native architecture principles optimized 
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        DynamoDB Data Model                         │
+│                        DynamoDB Data Model                          │
 └─────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────┐
-│                         Shelters Table                             │
+│                         Shelters Table                              │
 ├─────────────────────────────────────────────────────────────────────┤
-│ PK: shelterId (String)                                             │
+│ PK: shelterId (String)                                              │
 │ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐         │
 │ │   Basic Info    │ │    Location     │ │    Capacity     │         │
 │ │                 │ │                 │ │                 │         │
@@ -307,10 +307,10 @@ SafeHaven Connect follows modern cloud-native architecture principles optimized 
 └─────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────┐
-│                          Alerts Table                              │
+│                          Alerts Table                               │
 ├─────────────────────────────────────────────────────────────────────┤
-│ PK: alertId (String)                                               │
-│ GSI: shelterId-timestamp-index                                     │
+│ PK: alertId (String)                                                │
+│ GSI: shelterId-timestamp-index                                      │
 │                                                                     │
 │ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐         │
 │ │   Alert Info    │ │   Tracking      │ │   Resolution    │         │
@@ -323,10 +323,10 @@ SafeHaven Connect follows modern cloud-native architecture principles optimized 
 └─────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────┐
-│                          Users Table                               │
+│                          Users Table                                │
 ├─────────────────────────────────────────────────────────────────────┤
-│ PK: userId (String)                                                │
-│ GSI: shelterId-index (for shelter operators)                      │
+│ PK: userId (String)                                                 │
+│ GSI: shelterId-index (for shelter operators)                        │
 │                                                                     │
 │ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐         │
 │ │  User Profile   │ │  Authorization  │ │   Session       │         │
@@ -375,7 +375,7 @@ SafeHaven Connect follows modern cloud-native architecture principles optimized 
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        Data Flow Diagram                           │
+│                        Data Flow Diagram                            │
 └─────────────────────────────────────────────────────────────────────┘
 
     ┌─────────────┐                    ┌─────────────┐
@@ -390,14 +390,14 @@ SafeHaven Connect follows modern cloud-native architecture principles optimized 
     │   Gateway   │                    │  Connection │
     └─────────────┘                    └─────────────┘
            │                                  │
-           │ 2. Route to Lambda              │
+           │ 2. Route to Lambda               │
            ▼                                  │
-    ┌─────────────┐                          │
-    │   Lambda    │─────3. Update Data──────►│
-    │  Function   │                          │
-    └─────────────┘                          │
+    ┌─────────────┐                           │
+    │   Lambda    │─────3. Update Data──────► │
+    │  Function   │                           │
+    └─────────────┘                           │
            │                                  │
-           │ 4. Publish Event                │
+           │ 4. Publish Event                 │
            ▼                                  │
     ┌─────────────┐      SNS Topic      ┌─────────────┐
     │  DynamoDB   │◄────────────────────┤     SNS     │
@@ -435,7 +435,7 @@ SafeHaven Connect follows modern cloud-native architecture principles optimized 
 │   Shelter App   │                              │   Dashboard     │
 │                 │                              │                 │
 │ ┌─────────────┐ │          FirstNet            │ ┌─────────────┐ │
-│ │   Update    │ │◄────────Network────────────►│ │  Real-time  │ │
+│ │   Update    │ │◄────────Network────────────► │ │  Real-time  │ │
 │ │  Component  │ │         Priority             │ │   Updates   │ │
 │ └─────────────┘ │                              │ └─────────────┘ │
 └─────────────────┘                              └─────────────────┘
@@ -444,12 +444,12 @@ SafeHaven Connect follows modern cloud-native architecture principles optimized 
          │ /api/shelters/{id}/status                      │
          ▼                                                ▼
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        AWS API Gateway                             │
+│                        AWS API Gateway                              │
 ├─────────────────────────────────────────────────────────────────────┤
 │  REST Endpoints          │        WebSocket API                     │
 │  • POST /shelters        │        • Connection Management           │
 │  • PUT /status           │        • Message Broadcasting            │
-│  • POST /alerts          │        • Client Subscriptions           │
+│  • POST /alerts          │        • Client Subscriptions            │
 └─────────────────────────────────────────────────────────────────────┘
          │                                                │
          │ Invoke                                Invoke   │
@@ -471,7 +471,7 @@ SafeHaven Connect follows modern cloud-native architecture principles optimized 
 │  Shelters Table                  │         Connections Table        │
 │  • Current status                │         • Active WebSocket       │
 │  • Capacity data                 │         • Client subscriptions   │
-│  • Resource levels               │         • Connection metadata     │
+│  • Resource levels               │         • Connection metadata    │
 └─────────────────────────────────────────────────────────────────────┘
          │
          │ Stream Changes
@@ -492,7 +492,7 @@ SafeHaven Connect follows modern cloud-native architecture principles optimized 
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        API Endpoint Design                         │
+│                        API Endpoint Design                          │
 └─────────────────────────────────────────────────────────────────────┘
 
 Authentication & Registration:
@@ -587,7 +587,7 @@ dashboard.refresh                     │ Force dashboard refresh
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                      AWS Cloud Infrastructure                      │
+│                      AWS Cloud Infrastructure                       │
 └─────────────────────────────────────────────────────────────────────┘
 
                     ┌─────────────────┐
@@ -676,7 +676,7 @@ dashboard.refresh                     │ Force dashboard refresh
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                    Environment Configuration                       │
+│                    Environment Configuration                        │
 └─────────────────────────────────────────────────────────────────────┘
 
 Development Environment:
@@ -758,11 +758,11 @@ SafeHavenStack:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                      Security Architecture                         │
+│                      Security Architecture                          │
 └─────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        Perimeter Security                          │
+│                        Perimeter Security                           │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐      │
 │  │   CloudFront    │  │      WAF        │  │    Route 53     │      │
 │  │   (DDoS Prot.)  │  │ (App Firewall)  │  │  (DNS Security) │      │
@@ -778,7 +778,7 @@ SafeHavenStack:
                            └─────────────────┘
                                    │
 ┌─────────────────────────────────────────────────────────────────────┐
-│                      Application Security                          │
+│                      Application Security                           │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐      │
 │  │   JWT Tokens    │  │   Role-Based    │  │   Input         │      │
 │  │                 │  │   Access        │  │   Validation    │      │
@@ -789,7 +789,7 @@ SafeHavenStack:
 └─────────────────────────────────────────────────────────────────────┘
                                    │
 ┌─────────────────────────────────────────────────────────────────────┐
-│                        Data Security                               │
+│                        Data Security                                │
 │  ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐      │
 │  │   Encryption    │  │   Key Mgmt      │  │   Data Access   │      │
 │  │                 │  │                 │  │                 │      │
@@ -804,7 +804,7 @@ SafeHavenStack:
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
-│                    Authentication Flow Diagram                     │
+│                    Authentication Flow Diagram                      │
 └─────────────────────────────────────────────────────────────────────┘
 
 Shelter App Authentication:
