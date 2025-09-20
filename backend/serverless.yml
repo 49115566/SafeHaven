@@ -2,6 +2,70 @@ service: safehaven-backend
 
 frameworkVersion: '3'
 
+# Package optimization - comprehensive dependency inclusion
+package:
+  patterns:
+    - '!src/**'          # Exclude TypeScript source
+    - '!.serverless/**'  # Exclude serverless temp files
+    - '!*.test.*'        # Exclude test files
+    - '!jest.config.*'   # Exclude Jest config
+    - '!tsconfig.json'   # Exclude TypeScript config
+    - '!webpack.config.js' # Exclude webpack config
+    - '!README.md'       # Exclude documentation
+    - '!node_modules/@types/**'  # Exclude TypeScript types
+    - '!node_modules/**/*.d.ts'  # Exclude type definition files
+    - '!node_modules/**/test/**' # Exclude test directories
+    - '!node_modules/**'         # Exclude all node_modules first
+    - '../node_modules/@aws-sdk/**'     # Include AWS SDK v3
+    - '../node_modules/@smithy/**'      # Include Smithy dependencies
+    - '../node_modules/@aws/**'         # Include @aws scoped packages
+    - '../node_modules/uuid/**'         # Include UUID
+    - '../node_modules/bcryptjs/**'     # Include bcrypt
+    - '../node_modules/joi/**'          # Include Joi validation
+    - '../node_modules/jsonwebtoken/**' # Include JWT
+    - '../node_modules/jws/**'          # Include JWS
+    - '../node_modules/ms/**'           # Include ms time parsing
+    - '../node_modules/mnemonist/**'    # Include mnemonist
+    - '../node_modules/obliterator/**'  # Include obliterator
+    - '../node_modules/tslib/**'        # Include TypeScript runtime
+    - '../node_modules/fast-xml-parser/**' # Include XML parser
+    - '../node_modules/safe-buffer/**'  # Include safe buffer
+    - '../node_modules/jwa/**'          # Include JSON Web Algorithm
+    - '../node_modules/ecdsa-sig-formatter/**' # Include ECDSA signature formatter
+    - '../node_modules/lodash.includes/**' # Include lodash includes utility
+    - '../node_modules/lodash.isboolean/**' # Include lodash isboolean utility
+    - '../node_modules/lodash.isinteger/**' # Include lodash isinteger utility
+    - '../node_modules/lodash.isnumber/**'  # Include lodash isnumber utility
+    - '../node_modules/lodash.isstring/**'  # Include lodash isstring utility
+    - '../node_modules/lodash.isplainobject/**' # Include lodash isplainobject utility
+    - '../node_modules/lodash.once/**'      # Include lodash once utility
+    - '!node_modules/**/tests/**' # Exclude tests directories
+    - '!node_modules/**/*.test.js' # Exclude test files
+    - 'dist/**'          # Include compiled JavaScript
+    # Include essential AWS SDK and auth dependencies from root node_modules
+    - '../node_modules/@aws-sdk/**'
+    - '../node_modules/@smithy/**'
+    - '../node_modules/@aws/**'
+    - '../node_modules/uuid/**'
+    - '../node_modules/bcryptjs/**'
+    - '../node_modules/joi/**'
+    - '../node_modules/jsonwebtoken/**'
+    - '../node_modules/jws/**'
+    - '../node_modules/ms/**'
+    - '../node_modules/mnemonist/**'
+    - '../node_modules/obliterator/**'
+    - '../node_modules/tslib/**'
+    - '../node_modules/aws-sdk/**'
+    - '../node_modules/jmespath/**'
+    - '../node_modules/xml2js/**'
+    - '../node_modules/querystring/**'
+    - '../node_modules/querystringify/**'
+    - '../node_modules/buffer/**'
+    - '../node_modules/events/**'
+    - '../node_modules/stream-browserify/**'
+    - '../node_modules/util/**'
+    - '../node_modules/crypto-browserify/**'
+
 provider:
   name: aws
   runtime: nodejs18.x
@@ -62,9 +126,42 @@ custom:
     websocketPort: 3011
 
 functions:
+  # Test Functions
+  simpleTest:
+    handler: dist/functions/test/simple.handler
+    events:
+      - http:
+          path: test/simple
+          method: get
+          cors: true
+
+  testRegister:
+    handler: dist/functions/test/register-simple.handler
+    events:
+      - http:
+          path: test/register
+          method: post
+          cors: true
+
+  testDynamoDB:
+    handler: dist/functions/test/dynamodb-test.handler
+    events:
+      - http:
+          path: test/dynamodb
+          method: get
+          cors: true
+
+  testDynamoDBv2:
+    handler: dist/functions/test/dynamodb-v2-test.handler
+    events:
+      - http:
+          path: test/dynamodb-v2
+          method: get
+          cors: true
+
   # Authentication Functions
   authLogin:
-    handler: src/functions/auth/login.handler
+    handler: dist/functions/auth/login.handler
     events:
       - http:
           path: auth/login
@@ -72,7 +169,7 @@ functions:
           cors: true
 
   authRegister:
-    handler: src/functions/auth/register.handler
+    handler: dist/functions/auth/register.handler
     events:
       - http:
           path: auth/register
@@ -81,7 +178,7 @@ functions:
 
   # Shelter Management Functions
   createShelter:
-    handler: src/functions/shelters/create.handler
+    handler: dist/functions/shelters/create.handler
     events:
       - http:
           path: shelters
@@ -92,7 +189,7 @@ functions:
             resultTtlInSeconds: 300
 
   getShelters:
-    handler: src/functions/shelters/list.handler
+    handler: dist/functions/shelters/list.handler
     events:
       - http:
           path: shelters
@@ -103,7 +200,7 @@ functions:
             resultTtlInSeconds: 300
 
   getShelter:
-    handler: src/functions/shelters/get.handler
+    handler: dist/functions/shelters/get.handler
     events:
       - http:
           path: shelters/{shelterId}
@@ -114,7 +211,7 @@ functions:
             resultTtlInSeconds: 300
 
   updateShelterStatus:
-    handler: src/functions/shelters/updateStatus.handler
+    handler: dist/functions/shelters/updateStatus.handler
     events:
       - http:
           path: shelters/{shelterId}/status
@@ -126,7 +223,7 @@ functions:
 
   # Location Service Functions
   searchPlaces:
-    handler: src/functions/location/searchPlaces.handler
+    handler: dist/functions/location/searchPlaces.handler
     events:
       - http:
           path: location/search
@@ -137,7 +234,7 @@ functions:
             resultTtlInSeconds: 300
 
   getMapStyle:
-    handler: src/functions/location/getMapStyle.handler
+    handler: dist/functions/location/getMapStyle.handler
     events:
       - http:
           path: location/mapstyle
@@ -146,7 +243,7 @@ functions:
 
   # Alert Management Functions
   createAlert:
-    handler: src/functions/alerts/create.handler
+    handler: dist/functions/alerts/create.handler
     events:
       - http:
           path: alerts
@@ -157,7 +254,7 @@ functions:
             resultTtlInSeconds: 300
 
   getAlerts:
-    handler: src/functions/alerts/list.handler
+    handler: dist/functions/alerts/list.handler
     events:
       - http:
           path: alerts
@@ -168,7 +265,7 @@ functions:
             resultTtlInSeconds: 300
 
   acknowledgeAlert:
-    handler: src/functions/alerts/acknowledge.handler
+    handler: dist/functions/alerts/acknowledge.handler
     events:
       - http:
           path: alerts/{id}/acknowledge
@@ -179,7 +276,7 @@ functions:
             resultTtlInSeconds: 300
 
   resolveAlert:
-    handler: src/functions/alerts/resolve.handler
+    handler: dist/functions/alerts/resolve.handler
     events:
       - http:
           path: alerts/{id}/resolve
@@ -191,26 +288,26 @@ functions:
 
   # WebSocket Functions for Real-time Updates
   websocketConnect:
-    handler: src/functions/websocket/connect.handler
+    handler: dist/functions/websocket/connect.handler
     events:
       - websocket:
           route: $connect
 
   websocketDisconnect:
-    handler: src/functions/websocket/disconnect.handler
+    handler: dist/functions/websocket/disconnect.handler
     events:
       - websocket:
           route: $disconnect
 
   websocketDefault:
-    handler: src/functions/websocket/default.handler
+    handler: dist/functions/websocket/default.handler
     events:
       - websocket:
           route: $default
 
   # Authorization Function
   authVerify:
-    handler: src/functions/auth/verify.handler
+    handler: dist/functions/auth/verify.handler
 
 resources:
   Resources:
