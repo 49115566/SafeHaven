@@ -235,4 +235,5 @@ For questions or support related to this hackathon project, please contact Team 
 **Built with ❤️ for first responders and the communities they serve**
 
 *SafeHaven Connect - Connecting safety, saving lives*
+
 ![image](IMG_3361.jpg)
