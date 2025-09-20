@@ -33,6 +33,13 @@ export default function DashboardPage() {
     }
   ];
 
+  // Calculate statistics
+  const totalShelters = sampleShelters.length;
+  const operationalShelters = sampleShelters.filter(s => s.status === 'operational').length;
+  const totalCapacity = sampleShelters.reduce((sum, shelter) => sum + shelter.capacity, 0);
+  const currentOccupancy = sampleShelters.reduce((sum, shelter) => sum + shelter.currentOccupancy, 0);
+  const availableCapacity = totalCapacity - currentOccupancy;
+
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-7xl mx-auto">
@@ -56,11 +63,15 @@ export default function DashboardPage() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span>Total Shelters:</span>
-                  <span className="font-semibold">0</span>
+                  <span className="font-semibold">{totalShelters}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Available Capacity:</span>
-                  <span className="font-semibold">0</span>
+                  <span className="font-semibold">{availableCapacity}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Operational:</span>
+                  <span className="font-semibold">{operationalShelters}</span>
                 </div>
               </div>
             </div>

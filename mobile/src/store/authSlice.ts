@@ -54,7 +54,19 @@ const authSlice = createSlice({
     },
     updateUserProfile: (state, action: PayloadAction<Partial<User>>) => {
       if (state.user) {
-        state.user = { ...state.user, ...action.payload };
+        // Handle nested profile updates properly
+        if (action.payload.profile && state.user.profile) {
+          state.user = { 
+            ...state.user, 
+            ...action.payload,
+            profile: { 
+              ...state.user.profile, 
+              ...action.payload.profile 
+            }
+          };
+        } else {
+          state.user = { ...state.user, ...action.payload };
+        }
       }
     },
     setUser: (state, action: PayloadAction<{ user: User; token: string }>) => {

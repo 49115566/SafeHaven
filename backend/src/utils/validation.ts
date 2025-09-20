@@ -47,6 +47,12 @@ interface ValidationResult {
 export function validateLoginRequest(data: any): ValidationResult {
   const errors: string[] = [];
 
+  // Handle null/undefined inputs gracefully
+  if (!data || typeof data !== 'object') {
+    errors.push('Request data is required');
+    return { isValid: false, errors };
+  }
+
   if (!data.email || typeof data.email !== 'string') {
     errors.push('Email is required');
   } else if (!isValidEmail(data.email)) {
@@ -67,6 +73,12 @@ export function validateLoginRequest(data: any): ValidationResult {
 
 export function validateRegistrationRequest(data: any): ValidationResult {
   const errors: string[] = [];
+
+  // Handle null/undefined inputs gracefully
+  if (!data || typeof data !== 'object') {
+    errors.push('Request data is required');
+    return { isValid: false, errors };
+  }
 
   // Validate email
   if (!data.email || typeof data.email !== 'string') {

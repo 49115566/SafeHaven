@@ -14,5 +14,10 @@
     "!src/**/*.d.ts",
     "!src/index.tsx"
   ],
-  "coverageDirectory": "coverage"
+  "coverageDirectory": "coverage",
+  "maxWorkers": 1,
+  "workerIdleMemoryLimit": "512MB",
+  "testTimeout": 10000,
+  "clearMocks": true,
+  "restoreMocks": true
 }

@@ -3,11 +3,36 @@ import { ShelterState, Shelter, ShelterStatusUpdate } from '../types';
 import { shelterService } from '../services/shelterService';
 import { offlineService, PendingUpdate } from '../services/offlineService';
 
-const initialState: ShelterState = {
+interface StaffAssignment {
+  userId: string;
+  shelterId: string;
+  role: string;
+  shift: {
+    start: string;
+    end: string;
+  };
+  responsibilities: string[];
+}
+
+interface Resources {
+  [key: string]: {
+    available: number;
+    unit: string;
+  };
+}
+
+interface ExtendedShelterState extends ShelterState {
+  resources?: Resources;
+  staffAssignments?: StaffAssignment[];
+}
+
+const initialState: ExtendedShelterState = {
   currentShelter: null,
   isLoading: false,
   error: null,
   lastSync: null,
+  resources: undefined,
+  staffAssignments: [],
 };
 
 // Async thunk for syncing pending updates
@@ -107,6 +132,22 @@ const shelterSlice = createSlice({
         state.lastSync = new Date().toISOString();
       }
     },
+    updateResources: (state, action: PayloadAction<Resources>) => {
+      state.resources = action.payload;
+    },
+    assignStaff: (state, action: PayloadAction<StaffAssignment>) => {
+      if (!state.staffAssignments) {
+        state.staffAssignments = [];
+      }
+      state.staffAssignments.push(action.payload);
+    },
+    removeStaffAssignment: (state, action: PayloadAction<string>) => {
+      if (state.staffAssignments) {
+        state.staffAssignments = state.staffAssignments.filter(
+          assignment => assignment.userId !== action.payload
+        );
+      }
+    },
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload;
     },
@@ -117,6 +158,8 @@ const shelterSlice = createSlice({
       state.currentShelter = null;
       state.error = null;
       state.lastSync = null;
+      state.resources = undefined;
+      state.staffAssignments = [];
     },
     clearError: (state) => {
       state.error = null;
@@ -180,7 +223,10 @@ const shelterSlice = createSlice({
 
 export const { 
   setShelter, 
-  updateShelterStatus, 
+  updateShelterStatus,
+  updateResources,
+  assignStaff,
+  removeStaffAssignment,
   setLoading, 
   setError, 
   clearShelter, 
