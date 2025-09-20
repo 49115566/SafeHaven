@@ -140,6 +140,9 @@ export default function DashboardPage() {
               
               <div className="text-sm text-gray-600">
                 Welcome, {user?.profile.firstName} {user?.profile.lastName}
+                <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
+                  {user?.role.replace('_', ' ').toUpperCase()}
+                </span>
               </div>
               
               <button

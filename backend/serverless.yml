@@ -181,6 +181,14 @@ functions:
           method: post
           cors: true
 
+  authVerifyToken:
+    handler: dist/functions/auth/verifyToken.handler
+    events:
+      - http:
+          path: auth/verify
+          method: get
+          cors: true
+
   # Shelter Management Functions
   createShelter:
     handler: dist/functions/shelters/create.handler

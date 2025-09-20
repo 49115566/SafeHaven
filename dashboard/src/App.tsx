@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import DashboardPage from './pages/DashboardPage';
 import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import { useAuth } from './hooks/useAuth';
 import { RealtimeDataProvider } from './hooks/useRealtimeData';
 import LoadingSpinner from './components/LoadingSpinner';
@@ -41,6 +42,10 @@ function App() {
             <Route 
               path="/login" 
               element={<LoginPage />} 
+            />
+            <Route 
+              path="/register" 
+              element={<RegisterPage />} 
             />
             <Route 
               path="*" 

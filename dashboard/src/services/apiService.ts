@@ -105,22 +105,56 @@ export class ApiService {
    * Login with credentials
    */
   public async login(email: string, password: string): Promise<AuthResponse | null> {
-    return withRetry(async () => {
+    try {
       const response = await this.makeRequest<AuthResponse>('/api/auth/login', {
         method: 'POST',
         body: JSON.stringify({ email, password })
       });
       
-      if (!response.success) {
-        throw new Error(response.error?.message || 'Login failed');
-      }
-      
-      if (response.data?.token) {
+      if (response.success && response.data?.token) {
         this.setToken(response.data.token);
+        return response.data;
+      } else {
+        console.error('Login failed:', response.error?.message || 'Unknown error');
+        return null;
       }
+    } catch (error) {
+      console.error('Login request failed:', error);
+      return null;
+    }
+  }
+
+  /**
+   * Register new user
+   */
+  public async register(userData: {
+    email: string;
+    password: string;
+    profile: {
+      firstName: string;
+      lastName: string;
+      phone?: string;
+      organization?: string;
+    };
+    role: string;
+  }): Promise<AuthResponse | null> {
+    try {
+      const response = await this.makeRequest<AuthResponse>('/api/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(userData)
+      });
       
-      return response.data || null;
-    }, 2, 1000, { component: 'ApiService', action: 'login', timestamp: new Date().toISOString() });
+      if (response.success && response.data?.token) {
+        this.setToken(response.data.token);
+        return response.data;
+      } else {
+        console.error('Registration failed:', response.error?.message || 'Unknown error');
+        return null;
+      }
+    } catch (error) {
+      console.error('Registration request failed:', error);
+      return null;
+    }
   }
 
   /**
@@ -129,21 +163,24 @@ export class ApiService {
   public async verifyToken(): Promise<User | null> {
     if (!this.token) return null;
     
-    return withRetry(async () => {
+    try {
       const response = await this.makeRequest<User>('/api/auth/verify', {
         method: 'GET'
       });
       
-      if (!response.success) {
-        if (response.error?.statusCode === 401) {
-          this.clearToken();
-          return null;
-        }
-        throw new Error(response.error?.message || 'Token verification failed');
+      if (response.success && response.data) {
+        return response.data;
+      } else {
+        // Token is invalid, clear it
+        this.clearToken();
+        return null;
       }
-      
-      return response.data || null;
-    }, 2, 1000, { component: 'ApiService', action: 'verifyToken', timestamp: new Date().toISOString() });
+    } catch (error) {
+      console.error('Token verification failed:', error);
+      // Clear invalid token
+      this.clearToken();
+      return null;
+    }
   }
 
   /**

@@ -89,11 +89,60 @@ export function useAuth() {
         });
         
         return true;
+      } else {
+        // Login failed, clear any stored token
+        localStorage.removeItem(TOKEN_STORAGE_KEY);
+        const apiService = getApiService();
+        apiService.clearToken();
+        return false;
       }
-      
-      return false;
     } catch (error) {
       console.error('Login failed:', error);
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      const apiService = getApiService();
+      apiService.clearToken();
+      return false;
+    }
+  };
+
+  const register = async (userData: {
+    email: string;
+    password: string;
+    profile: {
+      firstName: string;
+      lastName: string;
+      phone?: string;
+      organization?: string;
+    };
+    role: string;
+  }): Promise<boolean> => {
+    try {
+      const apiService = getApiService();
+      const authResponse = await apiService.register(userData);
+      
+      if (authResponse?.token && authResponse?.user) {
+        localStorage.setItem(TOKEN_STORAGE_KEY, authResponse.token);
+        
+        setAuthState({
+          user: authResponse.user,
+          token: authResponse.token,
+          isAuthenticated: true,
+          isLoading: false
+        });
+        
+        return true;
+      } else {
+        // Registration failed, clear any stored token
+        localStorage.removeItem(TOKEN_STORAGE_KEY);
+        const apiService = getApiService();
+        apiService.clearToken();
+        return false;
+      }
+    } catch (error) {
+      console.error('Registration failed:', error);
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
+      const apiService = getApiService();
+      apiService.clearToken();
       return false;
     }
   };
@@ -115,6 +164,7 @@ export function useAuth() {
   return {
     ...authState,
     login,
-    logout
+    logout,
+    register
   };
 }
