@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
-import { Shelter, ShelterStatus, AlertStatus } from 'safehaven-shared';
+import React, { useState, useEffect } from 'react';
+import { Shelter, ShelterStatus, AlertStatus, Alert } from 'safehaven-shared';
 import AwsLocationMap from '../components/AwsLocationMap';
 import ConnectionStatusIndicator from '../components/ConnectionStatusIndicator';
+import AlertPanel from '../components/AlertPanel';
+import AlertNotification from '../components/AlertNotification';
 import { useShelters, useActiveAlerts, useShelterStats, useConnectionStatus, useRealtimeData } from '../hooks/useRealtimeData';
 import { useAuth } from '../hooks/useAuth';
 
@@ -13,6 +15,20 @@ export default function DashboardPage() {
   const stats = useShelterStats();
   const connectionStatus = useConnectionStatus();
   const [selectedShelter, setSelectedShelter] = useState<Shelter | null>(null);
+  const [notifications, setNotifications] = useState<Alert[]>([]);
+  const [showAlertPanel, setShowAlertPanel] = useState(false);
+
+  // Handle new alert notifications
+  useEffect(() => {
+    const newAlerts = activeAlerts.filter(alert => 
+      alert.status === AlertStatus.OPEN && 
+      !notifications.some(n => n.alertId === alert.alertId)
+    );
+    
+    if (newAlerts.length > 0) {
+      setNotifications(prev => [...prev, ...newAlerts]);
+    }
+  }, [activeAlerts, notifications]);
 
   // Connection status indicator
   const getConnectionStatusColor = () => {
@@ -54,9 +70,16 @@ export default function DashboardPage() {
   const handleAcknowledgeAlert = async (alertId: string) => {
     try {
       await acknowledgeAlert(alertId);
+      // Remove from notifications
+      setNotifications(prev => prev.filter(n => n.alertId !== alertId));
     } catch (error) {
       console.error('Failed to acknowledge alert:', error);
     }
+  };
+
+  // Handle notification dismissal
+  const handleDismissNotification = (alertId: string) => {
+    setNotifications(prev => prev.filter(n => n.alertId !== alertId));
   };
 
   if (state.isLoading) {
@@ -271,30 +294,50 @@ export default function DashboardPage() {
               </div>
             </div>
 
-            {/* Active Alerts */}
+            {/* Active Alerts Summary */}
             <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold mb-4">Active Alerts</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-semibold">Active Alerts</h2>
+                <button
+                  onClick={() => setShowAlertPanel(!showAlertPanel)}
+                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  {showAlertPanel ? 'Hide' : 'Manage'} Alerts
+                </button>
+              </div>
+              
               {activeAlerts.length === 0 ? (
-                <p className="text-gray-500 text-sm">No active alerts</p>
+                <div className="text-center py-6 text-gray-500">
+                  <div className="text-3xl mb-2">✅</div>
+                  <div>No active alerts</div>
+                </div>
               ) : (
                 <div className="space-y-3">
-                  {activeAlerts.slice(0, 5).map((alert) => (
+                  {activeAlerts.slice(0, 3).map((alert) => (
                     <div 
                       key={alert.alertId} 
-                      className={`p-3 rounded-lg border-l-4 ${
+                      className={`p-3 rounded-lg border-l-4 cursor-pointer hover:shadow-md transition-shadow ${
                         alert.priority === 'critical' ? 'border-red-500 bg-red-50' :
                         alert.priority === 'high' ? 'border-orange-500 bg-orange-50' :
                         alert.priority === 'medium' ? 'border-yellow-500 bg-yellow-50' :
                         'border-blue-500 bg-blue-50'
                       }`}
+                      onClick={() => setShowAlertPanel(true)}
                     >
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-1">
+                            <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                              alert.priority === 'critical' ? 'bg-red-600 text-white' :
+                              alert.priority === 'high' ? 'bg-orange-600 text-white' :
+                              alert.priority === 'medium' ? 'bg-yellow-600 text-white' :
+                              'bg-blue-600 text-white'
+                            }`}>
+                              {alert.priority.toUpperCase()}
+                            </span>
+                          </div>
                           <div className="text-sm font-semibold text-gray-900">
                             {alert.title}
-                          </div>
-                          <div className="text-xs text-gray-600 mt-1">
-                            {alert.description}
                           </div>
                           <div className="text-xs text-gray-500 mt-1">
                             {new Date(alert.createdAt).toLocaleString()}
@@ -302,7 +345,10 @@ export default function DashboardPage() {
                         </div>
                         {alert.status === AlertStatus.OPEN && (
                           <button
-                            onClick={() => handleAcknowledgeAlert(alert.alertId)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleAcknowledgeAlert(alert.alertId);
+                            }}
                             className="ml-2 px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700"
                           >
                             Acknowledge
@@ -311,10 +357,13 @@ export default function DashboardPage() {
                       </div>
                     </div>
                   ))}
-                  {activeAlerts.length > 5 && (
-                    <div className="text-sm text-gray-500 text-center">
-                      +{activeAlerts.length - 5} more alerts
-                    </div>
+                  {activeAlerts.length > 3 && (
+                    <button
+                      onClick={() => setShowAlertPanel(true)}
+                      className="w-full text-sm text-blue-600 hover:text-blue-800 text-center py-2 border border-blue-200 rounded hover:bg-blue-50"
+                    >
+                      View all {activeAlerts.length} alerts
+                    </button>
                   )}
                 </div>
               )}
@@ -370,6 +419,27 @@ export default function DashboardPage() {
             )}
           </div>
         </div>
+        
+        {/* Alert Management Panel */}
+        {showAlertPanel && (
+          <div className="mt-6">
+            <AlertPanel className="" />
+          </div>
+        )}
+      </div>
+
+      {/* Alert Notifications */}
+      <div className="fixed top-4 right-4 z-50 space-y-2">
+        {notifications.map((alert) => (
+          <AlertNotification
+            key={alert.alertId}
+            alert={alert}
+            onDismiss={() => handleDismissNotification(alert.alertId)}
+            onAcknowledge={handleAcknowledgeAlert}
+            autoHide={alert.priority !== 'critical'}
+            duration={alert.priority === 'critical' ? 0 : 10000}
+          />
+        ))}
       </div>
     </div>
   );

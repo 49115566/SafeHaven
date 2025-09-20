@@ -14,3 +14,15 @@ Object.defineProperty(window, 'matchMedia', {
     dispatchEvent: jest.fn(),
   })),
 });
+
+// Mock Audio API for test environment
+Object.defineProperty(window, 'Audio', {
+  writable: true,
+  value: jest.fn().mockImplementation(() => ({
+    play: jest.fn().mockResolvedValue(undefined),
+    pause: jest.fn(),
+    volume: 0.3,
+    addEventListener: jest.fn(),
+    removeEventListener: jest.fn(),
+  })),
+});

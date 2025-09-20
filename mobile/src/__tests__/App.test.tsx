@@ -11,7 +11,7 @@ import authReducer, { loginUser, registerUser, logoutUser, clearError, setUser }
 import shelterReducer from '../store/shelterSlice';
 import alertReducer from '../store/alertSlice';
 import networkReducer from '../store/networkSlice';
-import { UserRole } from '../types';
+import { UserRole, AlertType, AlertPriority, AlertStatus } from '../types';
 
 // Mock external dependencies
 jest.mock('react-native-toast-message', () => ({
@@ -287,116 +287,100 @@ describe('SafeHaven Mobile App Tests', () => {
   describe('Alert Management', () => {
     it('should add and manage emergency alerts', () => {
       const emergencyAlert = {
-        id: 'alert-emergency-1',
-        type: 'emergency',
+        alertId: 'alert-emergency-1',
+        type: 'emergency' as AlertType,
         title: 'Evacuation Notice',
         message: 'Immediate evacuation required for downtown area due to gas leak',
-        timestamp: new Date().toISOString(),
-        priority: 'high',
-        acknowledged: false,
-        location: {
-          area: 'Downtown District',
-          coordinates: { lat: 37.7749, lng: -122.4194 }
-        }
+        createdAt: new Date().toISOString(),
+        priority: 'high' as AlertPriority,
+        status: 'active' as AlertStatus,
+        shelterId: 'shelter-123',
+        createdBy: 'system'
       };
 
-      store.dispatch({ type: 'alert/addAlert', payload: emergencyAlert });
+      // Simulate successful alert creation
+      const action = {
+        type: 'alerts/createAlert/fulfilled',
+        payload: emergencyAlert
+      };
+      store.dispatch(action);
 
       const state = store.getState();
       // Check that the alert was added with the correct structure
-      const addedAlert = state.alert.alerts.find((alert: any) => alert.id === 'alert-emergency-1');
+      const addedAlert = state.alert.alerts.find((alert: any) => alert.alertId === 'alert-emergency-1');
       expect(addedAlert).toBeDefined();
       expect(addedAlert.title).toBe('Evacuation Notice');
       expect(addedAlert.type).toBe('emergency');
       expect(addedAlert.priority).toBe('high');
-      expect(state.alert.unreadCount).toBe(1);
     });
 
-    it('should acknowledge alerts and update unread count', () => {
+    it('should acknowledge alerts and update status', () => {
       const alerts = [
         {
-          id: 'alert-1',
-          type: 'info',
+          alertId: 'alert-1',
+          type: 'info' as AlertType,
           title: 'Weather Update',
           message: 'Heavy rain expected',
-          timestamp: new Date().toISOString(),
-          priority: 'low',
-          acknowledged: false
+          createdAt: new Date().toISOString(),
+          priority: 'low' as AlertPriority,
+          status: 'active' as AlertStatus,
+          shelterId: 'shelter-123',
+          createdBy: 'system'
         },
         {
-          id: 'alert-2',
-          type: 'warning',
+          alertId: 'alert-2',
+          type: 'warning' as AlertType,
           title: 'Road Closure',
           message: 'Main St closed due to flooding',
-          timestamp: new Date().toISOString(),
-          priority: 'medium',
-          acknowledged: false
+          createdAt: new Date().toISOString(),
+          priority: 'medium' as AlertPriority,
+          status: 'active' as AlertStatus,
+          shelterId: 'shelter-123',
+          createdBy: 'system'
         }
       ];
 
       // Add alerts
       alerts.forEach(alert => {
-        store.dispatch({ type: 'alert/addAlert', payload: alert });
+        store.dispatch({ type: 'alerts/fetchAlerts/fulfilled', payload: alerts });
       });
 
       let state = store.getState();
-      expect(state.alert.unreadCount).toBe(2);
+      expect(state.alert.alerts.length).toBe(2);
 
       // Acknowledge one alert
-      store.dispatch({ type: 'alert/acknowledgeAlert', payload: 'alert-1' });
+      store.dispatch({ type: 'alerts/acknowledgeAlert/fulfilled', payload: 'alert-1' });
 
       state = store.getState();
-      expect(state.alert.unreadCount).toBe(1);
-      
-      const acknowledgedAlert = state.alert.alerts.find((a: any) => a.id === 'alert-1');
-      expect(acknowledgedAlert.acknowledged).toBe(true);
+      const acknowledgedAlert = state.alert.alerts.find((a: any) => a.alertId === 'alert-1');
+      expect(acknowledgedAlert.status).toBe('acknowledged');
     });
 
     it('should filter alerts by priority and type', () => {
       const alerts = [
-        { id: 'alert-high-1', priority: 'high', type: 'emergency', acknowledged: false },
-        { id: 'alert-medium-1', priority: 'medium', type: 'warning', acknowledged: false },
-        { id: 'alert-low-1', priority: 'low', type: 'info', acknowledged: false }
+        { alertId: 'alert-high-1', priority: 'high' as AlertPriority, type: 'emergency' as AlertType, status: 'active' as AlertStatus, title: 'High Alert', message: 'Test', createdAt: new Date().toISOString(), shelterId: 'shelter-123', createdBy: 'system' },
+        { alertId: 'alert-medium-1', priority: 'medium' as AlertPriority, type: 'warning' as AlertType, status: 'active' as AlertStatus, title: 'Medium Alert', message: 'Test', createdAt: new Date().toISOString(), shelterId: 'shelter-123', createdBy: 'system' },
+        { alertId: 'alert-low-1', priority: 'low' as AlertPriority, type: 'info' as AlertType, status: 'active' as AlertStatus, title: 'Low Alert', message: 'Test', createdAt: new Date().toISOString(), shelterId: 'shelter-123', createdBy: 'system' }
       ];
 
-      alerts.forEach(alert => {
-        store.dispatch({ type: 'alert/addAlert', payload: alert });
-      });
-
-      store.dispatch({ type: 'alert/setFilter', payload: { priority: 'high' } });
+      store.dispatch({ type: 'alerts/fetchAlerts/fulfilled', payload: alerts });
+      store.dispatch({ type: 'alerts/setAlertFilter', payload: { priority: 'high' } });
 
       const state = store.getState();
-      // Check if filter was set (implementation dependent)
-      if (state.alert.filter && state.alert.filter.priority) {
-        expect(state.alert.filter.priority).toBe('high');
-      } else {
-        // Alternative: just verify alerts were added
-        expect(state.alert.alerts.length).toBeGreaterThan(0);
-      }
+      expect(state.alert.filter.priority).toBe('high');
+      expect(state.alert.alerts.length).toBe(3);
     });
 
-    it('should clear all alerts', () => {
-      // Add multiple alerts
-      const alerts = ['alert-1', 'alert-2', 'alert-3'].map(id => ({
-        id,
-        type: 'info',
-        title: 'Test Alert',
-        message: 'Test message',
-        timestamp: new Date().toISOString(),
-        priority: 'low',
-        acknowledged: false
-      }));
+    it('should clear alert filter', () => {
+      // Set a filter first
+      store.dispatch({ type: 'alerts/setAlertFilter', payload: { priority: 'high' } });
+      let state = store.getState();
+      expect(state.alert.filter.priority).toBe('high');
 
-      alerts.forEach(alert => {
-        store.dispatch({ type: 'alert/addAlert', payload: alert });
-      });
-
-      // Clear all
-      store.dispatch({ type: 'alert/clearAllAlerts' });
-
-      const state = store.getState();
-      expect(state.alert.alerts).toHaveLength(0);
-      expect(state.alert.unreadCount).toBe(0);
+      // Clear filter
+      store.dispatch({ type: 'alerts/clearAlertFilter' });
+      state = store.getState();
+      expect(state.alert.filter).toEqual({});
     });
   });
 
@@ -625,22 +609,22 @@ describe('SafeHaven Mobile App Tests', () => {
 
       // Coordinator can send alerts to all users
       const systemAlert = {
-        id: 'system-alert-1',
-        type: 'system',
+        alertId: 'system-alert-1',
+        type: 'system' as AlertType,
         title: 'System Maintenance',
         message: 'Scheduled maintenance will occur at 2 AM',
-        timestamp: new Date().toISOString(),
-        priority: 'medium',
-        senderId: 'coordinator@emergency.gov',
-        targetAudience: 'all',
-        acknowledged: false
+        createdAt: new Date().toISOString(),
+        priority: 'medium' as AlertPriority,
+        status: 'active' as AlertStatus,
+        createdBy: 'coordinator@emergency.gov',
+        shelterId: 'all'
       };
 
-      store.dispatch({ type: 'alert/addAlert', payload: systemAlert });
+      store.dispatch({ type: 'alerts/createAlert/fulfilled', payload: systemAlert });
 
       const state = store.getState();
       expect(state.auth.user.role).toBe('emergency_coordinator');
-      expect(state.alert.alerts[0].senderId).toBe('coordinator@emergency.gov');
+      expect(state.alert.alerts[0].createdBy).toBe('coordinator@emergency.gov');
     });
   });
 });
