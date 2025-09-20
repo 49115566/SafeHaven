@@ -1,0 +1,38 @@
+{
+  "disaster": {
+    "type": "hurricane",
+    "name": "Hurricane Delta",
+    "severity": "Category 3",
+    "expectedDuration": "48 hours",
+    "primaryThreats": ["flooding", "power outages", "wind damage"]
+  },
+  "weather": {
+    "temperature": 68,
+    "conditions": "heavy rain",
+    "windSpeed": 85,
+    "visibility": "poor"
+  },
+  "timeContext": {
+    "currentTime": "2025-09-20T18:30:00Z",
+    "timeOfDay": "evening",
+    "hoursIntoDisaster": 12
+  },
+  "resources": {
+    "availableSupplies": {
+      "water": 5000,
+      "food": 3000,
+      "medical": 500,
+      "bedding": 2000
+    },
+    "transportCapacity": {
+      "ambulances": 8,
+      "buses": 12,
+      "helicopters": 2
+    },
+    "nearbyFacilities": [
+      "Dallas Methodist Hospital (2.1 miles)",
+      "Red Cross Distribution Center (1.8 miles)",
+      "National Guard Staging Area (3.4 miles)"
+    ]
+  }
+}

@@ -116,6 +116,11 @@ provider:
         - execute-api:ManageConnections
       Resource:
         - "arn:aws:execute-api:${self:provider.region}:*:*/@connections/*"
+    - Effect: Allow
+      Action:
+        - bedrock:InvokeModel
+      Resource:
+        - "arn:aws:bedrock:${self:provider.region}::foundation-model/amazon.nova-micro-v1:0"
 
 plugins:
   - serverless-offline
@@ -281,6 +286,19 @@ functions:
       - http:
           path: alerts/{id}/resolve
           method: put
+          cors: true
+          authorizer:
+            name: authVerify
+            resultTtlInSeconds: 300
+
+  # AI Resource Prediction
+  predictResources:
+    handler: src/functions/ai/predictResources.handler
+    timeout: 60
+    events:
+      - http:
+          path: ai/predict-resources
+          method: post
           cors: true
           authorizer:
             name: authVerify

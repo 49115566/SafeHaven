@@ -12,10 +12,20 @@
     "test:watch": "jest --watch",
     "lint": "eslint src/**/*.ts",
     "lint:fix": "eslint src/**/*.ts --fix",
-    "clean": "rm -rf dist && rm -rf .serverless"
+    "clean": "rm -rf dist && rm -rf .serverless",
+    "generate-data": "npx ts-node scripts/generateTestData.ts",
+    "load-data": "npx ts-node scripts/loadTestData.ts",
+    "setup-data": "npm run generate-data && npm run load-data",
+    "test:prompts": "npx ts-node scripts/promptEvaluator.ts",
+    "test:prompts:live": "npx ts-node scripts/livePromptTester.ts live",
+    "test:prompts:batch": "npx ts-node scripts/livePromptTester.ts batch",
+    "test:prompts:benchmark": "npx ts-node scripts/livePromptTester.ts benchmark",
+    "test:ai": "npx ts-node scripts/testAI.ts",
+    "test:ai:local": "npx ts-node scripts/testAILocal.ts"
   },
   "dependencies": {
     "@aws-sdk/client-apigatewaymanagementapi": "^3.893.0",
+    "@aws-sdk/client-bedrock-runtime": "^3.893.0",
     "@aws-sdk/client-dynamodb": "^3.441.0",
     "@aws-sdk/client-location": "^3.441.0",
     "@aws-sdk/client-sns": "^3.441.0",

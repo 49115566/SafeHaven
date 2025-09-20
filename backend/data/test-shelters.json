@@ -1,0 +1,114 @@
+[
+  {
+    "shelterId": "shelter-0001",
+    "name": "Dallas Emergency Shelter",
+    "location": {
+      "latitude": 32.77074,
+      "longitude": -96.823774,
+      "address": "6095 Oak St, Dallas, TX 17824"
+    },
+    "capacity": {
+      "current": 13,
+      "maximum": 70
+    },
+    "resources": {
+      "food": "low",
+      "water": "adequate", 
+      "medical": "critical",
+      "bedding": "adequate"
+    },
+    "status": "full",
+    "operatorId": "user-0188",
+    "contactInfo": {
+      "phone": "+12323499923",
+      "email": "shelter1@dallas.gov"
+    },
+    "urgentNeeds": [],
+    "lastUpdated": "2025-09-20T18:30:57.415Z",
+    "createdAt": "2025-09-09T07:48:11.408Z"
+  },
+  {
+    "shelterId": "shelter-0002", 
+    "name": "Dallas School Gymnasium",
+    "location": {
+      "latitude": 32.853074,
+      "longitude": -96.753937,
+      "address": "3681 Elm St, Dallas, TX 54413"
+    },
+    "capacity": {
+      "current": 394,
+      "maximum": 435
+    },
+    "resources": {
+      "food": "low",
+      "water": "low",
+      "medical": "low", 
+      "bedding": "low"
+    },
+    "status": "limited",
+    "operatorId": "user-0138",
+    "contactInfo": {
+      "phone": "+16344487368",
+      "email": "shelter2@dallas.gov"
+    },
+    "urgentNeeds": [],
+    "lastUpdated": "2025-09-19T20:51:08.301Z",
+    "createdAt": "2025-09-04T21:47:11.559Z"
+  },
+  {
+    "shelterId": "shelter-0003",
+    "name": "Dallas Shopping Center", 
+    "location": {
+      "latitude": 32.751203,
+      "longitude": -96.75929,
+      "address": "3516 Pine St, Dallas, TX 26873"
+    },
+    "capacity": {
+      "current": 78,
+      "maximum": 445
+    },
+    "resources": {
+      "food": "adequate",
+      "water": "critical",
+      "medical": "critical",
+      "bedding": "adequate"
+    },
+    "status": "offline",
+    "operatorId": "user-0007",
+    "contactInfo": {
+      "phone": "+18117428003", 
+      "email": "shelter3@dallas.gov"
+    },
+    "urgentNeeds": [],
+    "lastUpdated": "2025-09-20T14:52:52.006Z",
+    "createdAt": "2025-08-28T17:59:14.766Z"
+  },
+  {
+    "shelterId": "shelter-0010",
+    "name": "Dallas Military Base",
+    "location": {
+      "latitude": 32.798494,
+      "longitude": -96.867033,
+      "address": "3023 Oak St, Dallas, TX 96496"
+    },
+    "capacity": {
+      "current": 8,
+      "maximum": 231
+    },
+    "resources": {
+      "food": "low",
+      "water": "critical", 
+      "medical": "critical",
+      "bedding": "critical"
+    },
+    "status": "emergency",
+    "operatorId": "user-0010",
+    "contactInfo": {
+      "phone": "+18448427547",
+      "email": "shelter10@dallas.gov"
+    },
+    "urgentNeeds": [],
+    "lastUpdated": "2025-09-20T01:28:32.174Z",
+    "createdAt": "2025-08-23T22:48:12.818Z"
+  }
+]
