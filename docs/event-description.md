@@ -12,6 +12,3 @@ Design a novel application or service that utilizes FirstNet's dedicated public 
 • Enable faster coordination between emergency services  
 • Improve disaster preparedness and response  
 • Create new ways for communities to interact with emergency services  
-Key dates  
-**August 21 \- September 18:** Submit your team's idea (up to 5 people per team) based on the challenge questions. Email generative-ai-hackathon-telco@amazon.com with:  
-• Subject: "Breaking Barriers: Public Safety & Network Intelligence Innovation"   
