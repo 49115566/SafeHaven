@@ -1,4 +1,5 @@
 import { Shelter, Alert, ApiResponse, AuthResponse, User } from 'safehaven-shared';
+import { withRetry } from '../utils/errorHandler';
 
 export interface ApiServiceConfig {
   baseUrl: string;
@@ -33,56 +34,93 @@ export class ApiService {
    * Get all shelters
    */
   public async getShelters(): Promise<Shelter[]> {
-    const response = await this.makeRequest<Shelter[]>('/api/shelters', {
-      method: 'GET'
-    });
-    return response.data || [];
+    return withRetry(async () => {
+      const response = await this.makeRequest<Shelter[]>('/api/shelters', {
+        method: 'GET'
+      });
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Failed to fetch shelters');
+      }
+      
+      return response.data || [];
+    }, 3, 1000, { component: 'ApiService', action: 'getShelters', timestamp: new Date().toISOString() });
   }
 
   /**
    * Get shelter by ID
    */
   public async getShelter(shelterId: string): Promise<Shelter | null> {
-    const response = await this.makeRequest<Shelter>(`/api/shelters/${shelterId}`, {
-      method: 'GET'
-    });
-    return response.data || null;
+    return withRetry(async () => {
+      const response = await this.makeRequest<Shelter>(`/api/shelters/${shelterId}`, {
+        method: 'GET'
+      });
+      
+      if (!response.success) {
+        if (response.error?.statusCode === 404) {
+          return null;
+        }
+        throw new Error(response.error?.message || 'Failed to fetch shelter');
+      }
+      
+      return response.data || null;
+    }, 2, 1000, { component: 'ApiService', action: 'getShelter', timestamp: new Date().toISOString() });
   }
 
   /**
    * Get all alerts
    */
   public async getAlerts(): Promise<Alert[]> {
-    const response = await this.makeRequest<Alert[]>('/api/alerts', {
-      method: 'GET'
-    });
-    return response.data || [];
+    return withRetry(async () => {
+      const response = await this.makeRequest<Alert[]>('/api/alerts', {
+        method: 'GET'
+      });
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Failed to fetch alerts');
+      }
+      
+      return response.data || [];
+    }, 3, 1000, { component: 'ApiService', action: 'getAlerts', timestamp: new Date().toISOString() });
   }
 
   /**
    * Acknowledge an alert
    */
   public async acknowledgeAlert(alertId: string): Promise<Alert | null> {
-    const response = await this.makeRequest<Alert>(`/api/alerts/${alertId}/acknowledge`, {
-      method: 'POST'
-    });
-    return response.data || null;
+    return withRetry(async () => {
+      const response = await this.makeRequest<Alert>(`/api/alerts/${alertId}/acknowledge`, {
+        method: 'POST'
+      });
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Failed to acknowledge alert');
+      }
+      
+      return response.data || null;
+    }, 2, 1000, { component: 'ApiService', action: 'acknowledgeAlert', timestamp: new Date().toISOString() });
   }
 
   /**
    * Login with credentials
    */
   public async login(email: string, password: string): Promise<AuthResponse | null> {
-    const response = await this.makeRequest<AuthResponse>('/api/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ email, password })
-    });
-    
-    if (response.data?.token) {
-      this.setToken(response.data.token);
-    }
-    
-    return response.data || null;
+    return withRetry(async () => {
+      const response = await this.makeRequest<AuthResponse>('/api/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password })
+      });
+      
+      if (!response.success) {
+        throw new Error(response.error?.message || 'Login failed');
+      }
+      
+      if (response.data?.token) {
+        this.setToken(response.data.token);
+      }
+      
+      return response.data || null;
+    }, 2, 1000, { component: 'ApiService', action: 'login', timestamp: new Date().toISOString() });
   }
 
   /**
@@ -91,10 +129,21 @@ export class ApiService {
   public async verifyToken(): Promise<User | null> {
     if (!this.token) return null;
     
-    const response = await this.makeRequest<User>('/api/auth/verify', {
-      method: 'GET'
-    });
-    return response.data || null;
+    return withRetry(async () => {
+      const response = await this.makeRequest<User>('/api/auth/verify', {
+        method: 'GET'
+      });
+      
+      if (!response.success) {
+        if (response.error?.statusCode === 401) {
+          this.clearToken();
+          return null;
+        }
+        throw new Error(response.error?.message || 'Token verification failed');
+      }
+      
+      return response.data || null;
+    }, 2, 1000, { component: 'ApiService', action: 'verifyToken', timestamp: new Date().toISOString() });
   }
 
   /**
@@ -142,10 +191,11 @@ export class ApiService {
       }
 
       if (!response.ok) {
-        throw new Error(
-          responseData.error?.message || 
-          `HTTP ${response.status}: ${response.statusText}`
-        );
+        const errorMessage = responseData.error?.message || `HTTP ${response.status}: ${response.statusText}`;
+        const error = new Error(errorMessage);
+        (error as any).statusCode = response.status;
+        (error as any).response = { status: response.status, data: responseData };
+        throw error;
       }
 
       return responseData;
@@ -153,11 +203,46 @@ export class ApiService {
     } catch (error) {
       console.error(`API request failed for ${endpoint}:`, error);
       
+      // Handle specific error types
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          return {
+            success: false,
+            error: {
+              message: 'Request timeout',
+              statusCode: 408
+            },
+            timestamp: new Date().toISOString()
+          };
+        }
+        
+        if (error.message.includes('Failed to fetch') || error.message.includes('NetworkError')) {
+          return {
+            success: false,
+            error: {
+              message: 'Network connection failed',
+              statusCode: 0
+            },
+            timestamp: new Date().toISOString()
+          };
+        }
+        
+        const statusCode = (error as any).statusCode || 500;
+        return {
+          success: false,
+          error: {
+            message: error.message,
+            statusCode
+          },
+          timestamp: new Date().toISOString()
+        };
+      }
+      
       // Return standardized error response
       return {
         success: false,
         error: {
-          message: error instanceof Error ? error.message : 'Unknown error occurred',
+          message: 'Unknown error occurred',
           statusCode: 500
         },
         timestamp: new Date().toISOString()

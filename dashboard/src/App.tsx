@@ -6,6 +6,7 @@ import { useAuth } from './hooks/useAuth';
 import { RealtimeDataProvider } from './hooks/useRealtimeData';
 import LoadingSpinner from './components/LoadingSpinner';
 import ErrorBoundary from './components/ErrorBoundary';
+import { ErrorNotificationManager } from './components/ErrorNotification';
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -17,6 +18,7 @@ function App() {
   return (
     <ErrorBoundary>
       <div className="min-h-screen bg-gray-50">
+        <ErrorNotificationManager />
         {isAuthenticated ? (
           <RealtimeDataProvider>
             <Routes>

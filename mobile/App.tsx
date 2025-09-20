@@ -13,59 +13,62 @@ import StatusUpdateScreen from './src/screens/StatusUpdateScreen';
 import AlertScreen from './src/screens/AlertScreen';
 import SettingsScreen from './src/screens/SettingsScreen';
 import LoadingScreen from './src/components/LoadingScreen';
+import ErrorBoundary from './src/components/ErrorBoundary';
 
 const Stack = createStackNavigator();
 
 export default function App() {
   return (
-    <Provider store={store}>
-      <PersistGate loading={<LoadingScreen />} persistor={persistor}>
-        <NavigationContainer>
-          <StatusBar style="light" backgroundColor="#1f2937" />
-          <Stack.Navigator
-            initialRouteName="Login"
-            screenOptions={{
-              headerStyle: {
-                backgroundColor: '#1f2937',
-              },
-              headerTintColor: '#ffffff',
-              headerTitleStyle: {
-                fontWeight: 'bold',
-              },
-            }}
-          >
-            <Stack.Screen 
-              name="Login" 
-              component={LoginScreen}
-              options={{ headerShown: false }}
-            />
-            <Stack.Screen 
-              name="Dashboard" 
-              component={DashboardScreen}
-              options={{ 
-                title: 'SafeHaven Connect',
-                headerLeft: () => null // Prevent going back to login
+    <ErrorBoundary>
+      <Provider store={store}>
+        <PersistGate loading={<LoadingScreen />} persistor={persistor}>
+          <NavigationContainer>
+            <StatusBar style="light" backgroundColor="#1f2937" />
+            <Stack.Navigator
+              initialRouteName="Login"
+              screenOptions={{
+                headerStyle: {
+                  backgroundColor: '#1f2937',
+                },
+                headerTintColor: '#ffffff',
+                headerTitleStyle: {
+                  fontWeight: 'bold',
+                },
               }}
-            />
-            <Stack.Screen 
-              name="StatusUpdate" 
-              component={StatusUpdateScreen}
-              options={{ title: 'Update Status' }}
-            />
-            <Stack.Screen 
-              name="Alert" 
-              component={AlertScreen}
-              options={{ title: 'Create Alert' }}
-            />
-            <Stack.Screen 
-              name="Settings" 
-              component={SettingsScreen}
-              options={{ title: 'Settings' }}
-            />
-          </Stack.Navigator>
-          <Toast />
-        </NavigationContainer>
-      </PersistGate>
-    </Provider>
+            >
+              <Stack.Screen 
+                name="Login" 
+                component={LoginScreen}
+                options={{ headerShown: false }}
+              />
+              <Stack.Screen 
+                name="Dashboard" 
+                component={DashboardScreen}
+                options={{ 
+                  title: 'SafeHaven Connect',
+                  headerLeft: () => null // Prevent going back to login
+                }}
+              />
+              <Stack.Screen 
+                name="StatusUpdate" 
+                component={StatusUpdateScreen}
+                options={{ title: 'Update Status' }}
+              />
+              <Stack.Screen 
+                name="Alert" 
+                component={AlertScreen}
+                options={{ title: 'Create Alert' }}
+              />
+              <Stack.Screen 
+                name="Settings" 
+                component={SettingsScreen}
+                options={{ title: 'Settings' }}
+              />
+            </Stack.Navigator>
+            <Toast />
+          </NavigationContainer>
+        </PersistGate>
+      </Provider>
+    </ErrorBoundary>
   );
 }

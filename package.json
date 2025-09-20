@@ -35,7 +35,15 @@
     "clean": "npm run clean:backend && npm run clean:mobile && npm run clean:dashboard",
     "clean:backend": "cd backend && npm run clean",
     "clean:mobile": "cd mobile && npm run clean",
-    "clean:dashboard": "cd dashboard && npm run clean"
+    "clean:dashboard": "cd dashboard && npm run clean",
+    "demo:setup": "./scripts/demo-setup.sh",
+    "demo:seed": "node scripts/seed-demo-data.js",
+    "demo:capacity": "node scripts/demo-scenarios.js capacity",
+    "demo:resources": "node scripts/demo-scenarios.js resources",
+    "demo:medical": "node scripts/demo-scenarios.js medical",
+    "demo:coordination": "node scripts/demo-scenarios.js coordination",
+    "demo:reset": "node scripts/demo-scenarios.js reset",
+    "demo:all": "node scripts/demo-scenarios.js all"
   },
   "devDependencies": {
     "concurrently": "^8.2.2",
