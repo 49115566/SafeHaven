@@ -12,6 +12,7 @@ provider:
     SHELTERS_TABLE: ${self:service}-shelters-${self:provider.stage}
     USERS_TABLE: ${self:service}-users-${self:provider.stage}
     ALERTS_TABLE: ${self:service}-alerts-${self:provider.stage}
+    CONNECTIONS_TABLE: ${self:service}-connections-${self:provider.stage}
     SHELTER_UPDATES_TOPIC: ${self:service}-shelter-updates-${self:provider.stage}
     AWS_LOCATION_MAP_NAME: ${self:service}-map-${self:provider.stage}
     AWS_LOCATION_PLACE_INDEX: ${self:service}-places-${self:provider.stage}
@@ -29,6 +30,7 @@ provider:
         - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.SHELTERS_TABLE}"
         - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.USERS_TABLE}"
         - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.ALERTS_TABLE}"
+        - "arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.CONNECTIONS_TABLE}"
     - Effect: Allow
       Action:
         - sns:Publish
@@ -45,6 +47,11 @@ provider:
       Resource:
         - "arn:aws:geo:${self:provider.region}:*:map/${self:provider.environment.AWS_LOCATION_MAP_NAME}"
         - "arn:aws:geo:${self:provider.region}:*:place-index/${self:provider.environment.AWS_LOCATION_PLACE_INDEX}"
+    - Effect: Allow
+      Action:
+        - execute-api:ManageConnections
+      Resource:
+        - "arn:aws:execute-api:${self:provider.region}:*:*/@connections/*"
 
 plugins:
   - serverless-offline
@@ -181,24 +188,24 @@ functions:
             name: authVerify
             resultTtlInSeconds: 300
 
-  # WebSocket Functions for Real-time Updates (temporarily disabled for dev)
-  # websocketConnect:
-  #   handler: src/functions/websocket/connect.handler
-  #   events:
-  #     - websocket:
-  #         route: $connect
+  # WebSocket Functions for Real-time Updates
+  websocketConnect:
+    handler: src/functions/websocket/connect.handler
+    events:
+      - websocket:
+          route: $connect
 
-  # websocketDisconnect:
-  #   handler: src/functions/websocket/disconnect.handler
-  #   events:
-  #     - websocket:
-  #         route: $disconnect
+  websocketDisconnect:
+    handler: src/functions/websocket/disconnect.handler
+    events:
+      - websocket:
+          route: $disconnect
 
-  # websocketDefault:
-  #   handler: src/functions/websocket/default.handler
-  #   events:
-  #     - websocket:
-  #         route: $default
+  websocketDefault:
+    handler: src/functions/websocket/default.handler
+    events:
+      - websocket:
+          route: $default
 
   # Authorization Function
   authVerify:
@@ -288,6 +295,35 @@ resources:
         ProvisionedThroughput:
           ReadCapacityUnits: 5
           WriteCapacityUnits: 5
+
+    ConnectionsTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: ${self:provider.environment.CONNECTIONS_TABLE}
+        AttributeDefinitions:
+          - AttributeName: connectionId
+            AttributeType: S
+          - AttributeName: userId
+            AttributeType: S
+        KeySchema:
+          - AttributeName: connectionId
+            KeyType: HASH
+        GlobalSecondaryIndexes:
+          - IndexName: UserIndex
+            KeySchema:
+              - AttributeName: userId
+                KeyType: HASH
+            Projection:
+              ProjectionType: ALL
+            ProvisionedThroughput:
+              ReadCapacityUnits: 5
+              WriteCapacityUnits: 5
+        ProvisionedThroughput:
+          ReadCapacityUnits: 5
+          WriteCapacityUnits: 5
+        TimeToLiveSpecification:
+          AttributeName: ttl
+          Enabled: true
 
     # SNS Topic for Shelter Updates
     ShelterUpdatesTopic:

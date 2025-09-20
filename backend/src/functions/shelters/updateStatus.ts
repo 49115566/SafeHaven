@@ -34,8 +34,14 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       return responseHelper.notFound('Shelter not found');
     }
 
+    // Extract WebSocket endpoint information for real-time broadcasting
+    const websocketEndpoint = event.requestContext ? {
+      domainName: event.requestContext.domainName || 'unknown',
+      stage: event.requestContext.stage || 'dev'
+    } : undefined;
+
     // Send real-time notification to all connected responders
-    await notificationService.broadcastShelterUpdate(updatedShelter);
+    await notificationService.broadcastShelterUpdate(updatedShelter, websocketEndpoint);
 
     return responseHelper.success(updatedShelter);
   } catch (error) {

@@ -6,7 +6,7 @@ const snsClient = new SNSClient({ region: process.env.AWS_REGION || 'us-east-1' 
 export class NotificationService {
   private topicArn = process.env.SHELTER_UPDATES_TOPIC || '';
 
-  async broadcastShelterUpdate(shelter: Shelter): Promise<void> {
+  async broadcastShelterUpdate(shelter: Shelter, websocketEndpoint?: { domainName: string; stage: string }): Promise<void> {
     try {
       const message = {
         type: 'SHELTER_UPDATE',
@@ -33,13 +33,29 @@ export class NotificationService {
           }
         }
       }));
+
+      // Send via WebSocket if endpoint provided
+      if (websocketEndpoint) {
+        try {
+          const { broadcastShelterUpdate } = await import('./webSocketService');
+          await broadcastShelterUpdate(
+            websocketEndpoint.domainName,
+            websocketEndpoint.stage,
+            shelter,
+            shelter.shelterId
+          );
+        } catch (wsError) {
+          console.error('WebSocket broadcast failed for shelter update:', wsError);
+          // Don't throw - SNS succeeded, WebSocket is supplementary
+        }
+      }
     } catch (error) {
       console.error('Error broadcasting shelter update:', error);
       throw error;
     }
   }
 
-  async broadcastAlert(alert: Alert): Promise<void> {
+  async broadcastAlert(alert: Alert, websocketEndpoint?: { domainName: string; stage: string }): Promise<void> {
     try {
       const message = {
         type: 'ALERT',
@@ -70,6 +86,21 @@ export class NotificationService {
           }
         }
       }));
+
+      // Send via WebSocket if endpoint provided
+      if (websocketEndpoint) {
+        try {
+          const { broadcastAlert } = await import('./webSocketService');
+          await broadcastAlert(
+            websocketEndpoint.domainName,
+            websocketEndpoint.stage,
+            alert
+          );
+        } catch (wsError) {
+          console.error('WebSocket broadcast failed for alert:', wsError);
+          // Don't throw - SNS succeeded, WebSocket is supplementary
+        }
+      }
     } catch (error) {
       console.error('Error broadcasting alert:', error);
       throw error;
