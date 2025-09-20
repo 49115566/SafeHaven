@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import maplibregl from 'maplibre-gl';
 import { LocationClient, GetMapStyleDescriptorCommand } from '@aws-sdk/client-location';
+import { Shelter, ShelterStatus, ResourceStatus } from 'safehaven-shared';
 import 'maplibre-gl/dist/maplibre-gl.css';
 
 // AWS credentials should be configured via AWS CLI or IAM roles
@@ -9,22 +10,67 @@ const locationClient = new LocationClient({
 });
 
 interface MapProps {
-  shelters?: Array<{
-    id: string;
-    name: string;
-    latitude: number;
-    longitude: number;
-    status: 'operational' | 'limited' | 'down';
-    capacity?: number;
-    currentOccupancy?: number;
-  }>;
+  shelters: Shelter[];
+  onShelterClick?: (shelter: Shelter) => void;
   className?: string;
 }
 
-export default function AwsLocationMap({ shelters = [], className = "h-96" }: MapProps) {
+// Status color mapping based on shelter status and capacity
+function getShelterMarkerColor(shelter: Shelter): string {
+  switch (shelter.status) {
+    case ShelterStatus.AVAILABLE:
+      return 'bg-green-500';
+    case ShelterStatus.LIMITED:
+      return 'bg-yellow-500';
+    case ShelterStatus.FULL:
+      return 'bg-orange-500';
+    case ShelterStatus.EMERGENCY:
+      return 'bg-red-500';
+    case ShelterStatus.OFFLINE:
+      return 'bg-gray-500';
+    default:
+      return 'bg-gray-400';
+  }
+}
+
+// Get status text for display
+function getStatusText(status: ShelterStatus): string {
+  switch (status) {
+    case ShelterStatus.AVAILABLE:
+      return 'Available';
+    case ShelterStatus.LIMITED:
+      return 'Limited';
+    case ShelterStatus.FULL:
+      return 'Full';
+    case ShelterStatus.EMERGENCY:
+      return 'Emergency';
+    case ShelterStatus.OFFLINE:
+      return 'Offline';
+    default:
+      return 'Unknown';
+  }
+}
+
+// Get resource status indicator
+function getResourceIndicator(status: ResourceStatus): string {
+  switch (status) {
+    case ResourceStatus.ADEQUATE:
+      return '🟢';
+    case ResourceStatus.LOW:
+      return '🟡';
+    case ResourceStatus.CRITICAL:
+      return '🔴';
+    case ResourceStatus.UNAVAILABLE:
+      return '⚫';
+    default:
+      return '❓';
+  }
+}
+
+export default function AwsLocationMap({ shelters = [], onShelterClick, className = "h-96" }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
-  const markersRef = useRef<maplibregl.Marker[]>([]);
+  const markersRef = useRef<Record<string, maplibregl.Marker>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -120,41 +166,103 @@ export default function AwsLocationMap({ shelters = [], className = "h-96" }: Ma
     if (!map.current || isLoading || error) return;
 
     // Clear existing markers
-    markersRef.current.forEach(marker => marker.remove());
-    markersRef.current = [];
+    Object.values(markersRef.current).forEach(marker => marker.remove());
+    markersRef.current = {};
 
-    // Add new markers
+    // Add new markers for each shelter
     shelters.forEach((shelter) => {
+      const markerColor = getShelterMarkerColor(shelter);
+      const availableSpaces = shelter.capacity.maximum - shelter.capacity.current;
+      
       const markerElement = document.createElement('div');
-      markerElement.className = 'shelter-marker';
+      markerElement.className = 'shelter-marker cursor-pointer';
       markerElement.innerHTML = `
-        <div class="w-8 h-8 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white text-xs font-bold ${
-          shelter.status === 'operational' ? 'bg-green-500' :
-          shelter.status === 'limited' ? 'bg-yellow-500' : 'bg-red-500'
-        }">
-          ${shelter.capacity || '?'}
+        <div class="w-10 h-10 rounded-full border-2 border-white shadow-lg flex items-center justify-center text-white text-xs font-bold ${markerColor} hover:scale-110 transition-transform">
+          ${availableSpaces > 99 ? '99+' : availableSpaces}
         </div>
       `;
 
-      const popup = new maplibregl.Popup({ offset: 25 }).setHTML(`
-        <div class="p-2">
-          <h3 class="font-bold text-sm">${shelter.name}</h3>
-          <p class="text-xs text-gray-600">Status: <span class="capitalize ${
-            shelter.status === 'operational' ? 'text-green-600' :
-            shelter.status === 'limited' ? 'text-yellow-600' : 'text-red-600'
-          }">${shelter.status}</span></p>
-          ${shelter.capacity ? `<p class="text-xs text-gray-600">Capacity: ${shelter.currentOccupancy || 0}/${shelter.capacity}</p>` : ''}
+      // Create detailed popup content
+      const popupContent = `
+        <div class="p-3 min-w-64">
+          <div class="flex items-center justify-between mb-2">
+            <h3 class="font-bold text-sm text-gray-900">${shelter.name}</h3>
+            <span class="px-2 py-1 text-xs rounded-full ${markerColor} text-white">
+              ${getStatusText(shelter.status)}
+            </span>
+          </div>
+          
+          <div class="space-y-2 text-xs text-gray-600">
+            <div class="flex justify-between">
+              <span>Capacity:</span>
+              <span class="font-semibold">${shelter.capacity.current}/${shelter.capacity.maximum}</span>
+            </div>
+            
+            <div class="flex justify-between">
+              <span>Available:</span>
+              <span class="font-semibold text-green-600">${availableSpaces} spaces</span>
+            </div>
+            
+            <div class="border-t pt-2">
+              <div class="text-xs font-semibold mb-1">Resources:</div>
+              <div class="grid grid-cols-2 gap-1 text-xs">
+                <div>Food ${getResourceIndicator(shelter.resources.food)}</div>
+                <div>Water ${getResourceIndicator(shelter.resources.water)}</div>
+                <div>Medical ${getResourceIndicator(shelter.resources.medical)}</div>
+                <div>Bedding ${getResourceIndicator(shelter.resources.bedding)}</div>
+              </div>
+            </div>
+            
+            ${shelter.urgentNeeds && shelter.urgentNeeds.length > 0 ? `
+              <div class="border-t pt-2">
+                <div class="text-xs font-semibold text-red-600 mb-1">Urgent Needs:</div>
+                <div class="text-xs text-red-600">${shelter.urgentNeeds.join(', ')}</div>
+              </div>
+            ` : ''}
+            
+            <div class="border-t pt-2 text-xs text-gray-400">
+              Last updated: ${new Date(shelter.lastUpdated).toLocaleTimeString()}
+            </div>
+          </div>
         </div>
-      `);
+      `;
+
+      const popup = new maplibregl.Popup({ 
+        offset: 25,
+        closeButton: true,
+        closeOnClick: true
+      }).setHTML(popupContent);
 
       const marker = new maplibregl.Marker({ element: markerElement })
-        .setLngLat([shelter.longitude, shelter.latitude])
+        .setLngLat([shelter.location.longitude, shelter.location.latitude])
         .setPopup(popup)
         .addTo(map.current!);
 
-      markersRef.current.push(marker);
+      // Add click handler for shelter selection
+      markerElement.addEventListener('click', () => {
+        if (onShelterClick) {
+          onShelterClick(shelter);
+        }
+      });
+
+      // Store marker reference for updates
+      markersRef.current[shelter.shelterId] = marker;
     });
-  }, [shelters, isLoading, error]);
+
+    // Auto-fit map to show all shelters if there are any
+    if (shelters.length > 0 && map.current) {
+      const bounds = new maplibregl.LngLatBounds();
+      shelters.forEach(shelter => {
+        bounds.extend([shelter.location.longitude, shelter.location.latitude]);
+      });
+      
+      // Add padding to the bounds
+      map.current.fitBounds(bounds, {
+        padding: { top: 50, bottom: 50, left: 50, right: 50 },
+        maxZoom: 12
+      });
+    }
+  }, [shelters, isLoading, error, onShelterClick]);
 
   if (error) {
     return (
@@ -181,6 +289,33 @@ export default function AwsLocationMap({ shelters = [], className = "h-96" }: Ma
         </div>
       )}
       <div ref={mapContainer} className={`${className} rounded border`} />
+      
+      {/* Legend */}
+      <div className="absolute bottom-4 left-4 bg-white bg-opacity-90 rounded-lg p-3 shadow-lg">
+        <div className="text-xs font-semibold mb-2">Shelter Status</div>
+        <div className="space-y-1 text-xs">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-green-500"></div>
+            <span>Available</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
+            <span>Limited</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-orange-500"></div>
+            <span>Full</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-red-500"></div>
+            <span>Emergency</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-gray-500"></div>
+            <span>Offline</span>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

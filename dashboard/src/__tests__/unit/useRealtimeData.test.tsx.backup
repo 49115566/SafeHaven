@@ -1,0 +1,991 @@
+import React from 'react';
+import { renderHook, act, waitFor } from '@testing-library/react';
+import { RealtimeDataProvider, useRealtimeData, useShelters, useAlerts, useShelterStats } from '../../hooks/useRealtimeData';
+import { Shelter, Alert, ShelterStatus, ResourceStatus } from 'safehaven-shared';
+import * as websocketService from '../../services/websocketService';
+import * as apiService from '../../services/apiService';
+import * as authHook from '../../hooks/useAuth';
+
+// Mock dependencies
+jest.mock('../../services/websocketService');
+jest.mock('../../services/apiService');
+jest.mock('../../hooks/useAuth');
+
+const mockWebSocketService = websocketService as jest.Mocked<typeof websocketService>;
+const mockApiService = apiService as jest.Mocked<typeof apiService>;
+const mockAuthHook = authHook as jest.Mocked<typeof authHook>;
+
+// Mock WebSocket service instance
+const mockWebSocketServiceInstance = {
+  connect: jest.fn(),
+  disconnect: jest.fn(),
+  sendMessage: jest.fn(),
+  getConnectionState: jest.fn()
+};
+
+// Mock API service instance
+const mockApiServiceInstance = {
+  setToken: jest.fn(),
+  clearToken: jest.fn(),
+  getShelters: jest.fn(),
+  getAlerts: jest.fn(),
+  acknowledgeAlert: jest.fn(),
+  getShelter: jest.fn(),
+  createAlert: jest.fn(),
+  updateAlert: jest.fn(),
+  deleteAlert: jest.fn(),
+  updateShelter: jest.fn(),
+  authenticate: jest.fn(),
+  register: jest.fn(),
+  logout: jest.fn(),
+  getCurrentUser: jest.fn()
+};
+
+// Mock auth hook
+const mockAuth = {
+  user: { 
+    userId: 'user-123', 
+    email: 'test@example.com',
+    type: 'first_responder' as const 
+  },
+  token: 'test-token',
+  isAuthenticated: true,
+  isLoading: false,
+  login: jest.fn(),
+  logout: jest.fn(),
+  register: jest.fn()
+};
+
+// Test data
+const testShelters: Shelter[] = [
+  {
+    shelterId: 'shelter-001',
+    name: 'Downtown Emergency Shelter',
+    location: { 
+      latitude: 32.7767, 
+      longitude: -96.7970,
+      address: '123 Main St, Dallas, TX'
+    },
+    capacity: { maximum: 100, current: 60 },
+    resources: {
+      food: ResourceStatus.ADEQUATE,
+      water: ResourceStatus.ADEQUATE,
+      medical: ResourceStatus.LOW,
+      bedding: ResourceStatus.ADEQUATE
+    },
+    status: ShelterStatus.AVAILABLE,
+    operatorId: 'operator-001',
+    lastUpdated: '2025-09-20T10:00:00Z',
+    createdAt: '2025-09-20T08:00:00Z',
+    urgentNeeds: [],
+    contactInfo: {
+      phone: '555-0123',
+      email: 'downtown@shelter.com'
+    }
+  },
+  {
+    shelterId: 'shelter-002',
+    name: 'North Dallas Shelter',
+    location: { 
+      latitude: 32.8267, 
+      longitude: -96.7470,
+      address: '456 Oak Ave, Dallas, TX'
+    },
+    capacity: { maximum: 75, current: 75 },
+    resources: {
+      food: ResourceStatus.LOW,
+      water: ResourceStatus.ADEQUATE,
+      medical: ResourceStatus.ADEQUATE,
+      bedding: ResourceStatus.LOW
+    },
+    status: ShelterStatus.FULL,
+    operatorId: 'operator-002',
+    lastUpdated: '2025-09-20T10:30:00Z',
+    createdAt: '2025-09-20T08:30:00Z',
+    urgentNeeds: ['food', 'bedding'],
+    contactInfo: {
+      phone: '555-0456',
+      email: 'north@shelter.com'
+    }
+  }
+];
+
+const testAlerts: Alert[] = [
+  {
+    alertId: 'alert-001',
+    shelterId: 'shelter-001',
+    type: 'medical_emergency',
+    title: 'Medical Emergency',
+    description: 'Medical assistance needed immediately',
+    priority: 'high',
+    timestamp: 1632141300000, // 2025-09-20T10:15:00Z as Unix timestamp
+    status: 'active',
+    createdBy: 'operator-001'
+  },
+  {
+    alertId: 'alert-002',
+    shelterId: 'shelter-002',
+    type: 'resource_shortage',
+    title: 'Resource Shortage',
+    description: 'Running low on food supplies',
+    priority: 'medium',
+    timestamp: 1632139500000, // 2025-09-20T09:45:00Z as Unix timestamp
+    status: 'acknowledged',
+    createdBy: 'operator-002',
+    acknowledgedBy: 'responder-001'
+  }
+];
+
+describe('useRealtimeData Hook', () => {
+  let callbacks: any;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    
+    // Mock WebSocket service
+    mockWebSocketService.getWebSocketService.mockReturnValue(mockWebSocketServiceInstance as any);
+    mockWebSocketServiceInstance.getConnectionState.mockReturnValue({
+      status: 'disconnected',
+      reconnectAttempts: 0
+    });
+    
+    // Mock API service
+    mockApiService.getApiService.mockReturnValue(mockApiServiceInstance as any);
+    mockApiServiceInstance.getShelters.mockResolvedValue(testShelters);
+    mockApiServiceInstance.getAlerts.mockResolvedValue(testAlerts);
+    
+    // Mock auth hook
+    mockAuthHook.useAuth.mockReturnValue(mockAuth);
+
+    // Capture WebSocket callbacks
+    mockWebSocketServiceInstance.connect.mockImplementation((token: string, cb: any) => {
+      callbacks = cb;
+    });
+
+    // Mock console methods
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <RealtimeDataProvider>{children}</RealtimeDataProvider>
+  );
+
+  describe('RealtimeDataProvider', () => {
+    it('should initialize with loading state', () => {
+      const { result } = renderHook(() => useRealtimeData(), { wrapper });
+
+      expect(result.current.state.isLoading).toBe(true);
+      expect(result.current.state.shelters).toEqual({});
+      expect(result.current.state.alerts).toEqual({});
+      expect(result.current.state.connectionState.status).toBe('disconnected');
+      expect(result.current.state.error).toBeNull();
+    });
+
+    it('should fetch initial data when authenticated', async () => {
+      renderHook(() => useRealtimeData(), { wrapper });
+
+      await waitFor(() => {
+        expect(mockApiServiceInstance.getShelters).toHaveBeenCalled();
+      });
+      
+      await waitFor(() => {
+        expect(mockApiServiceInstance.getAlerts).toHaveBeenCalled();
+      });
+    });
+
+    it('should load shelters and alerts', async () => {
+      const { result } = renderHook(() => useRealtimeData(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.state.isLoading).toBe(false);
+      });
+      
+      expect(Object.keys(result.current.state.shelters)).toHaveLength(2);
+      expect(Object.keys(result.current.state.alerts)).toHaveLength(2);
+    });
+
+    it('should connect to WebSocket when authenticated', async () => {
+      renderHook(() => useRealtimeData(), { wrapper });
+
+      await waitFor(() => {
+        expect(mockWebSocketServiceInstance.connect).toHaveBeenCalledWith(
+          mockAuth.token,
+          expect.objectContaining({
+            onShelterUpdate: expect.any(Function),
+            onAlert: expect.any(Function),
+            onConnectionStateChange: expect.any(Function)
+          })
+        );
+      });
+    });
+
+    it('should handle API errors gracefully', async () => {
+      const error = new Error('API Error');
+      mockApiServiceInstance.getShelters.mockRejectedValue(error);
+
+      const { result } = renderHook(() => useRealtimeData(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.state.error).toContain('API Error');
+      });
+      
+      await waitFor(() => {
+        expect(result.current.state.isLoading).toBe(false);
+      });
+    });
+  });
+
+  describe('Real-time Updates', () => {
+    it('should handle shelter updates via WebSocket', async () => {
+      const { result } = renderHook(() => useRealtimeData(), { wrapper });
+
+      // Wait for initial data load
+      await waitFor(() => {
+        expect(result.current.state.isLoading).toBe(false);
+      });
+
+      const updatedShelter: Shelter = {
+        ...testShelters[0],
+        capacity: { maximum: 100, current: 80 },
+        status: ShelterStatus.LIMITED
+      };
+
+      // Simulate WebSocket shelter update
+      act(() => {
+        callbacks.onShelterUpdate(updatedShelter);
+      });
+
+      expect(result.current.state.shelters[updatedShelter.shelterId]).toEqual(updatedShelter);
+      expect(result.current.state.lastUpdated).toBeInstanceOf(Date);
+    });
+
+    it('should handle new alerts via WebSocket', async () => {
+      const { result } = renderHook(() => useRealtimeData(), { wrapper });
+
+      // Wait for initial data load
+      await waitFor(() => {
+        expect(result.current.state.isLoading).toBe(false);
+      });
+
+      const newAlert: Alert = {
+        alertId: 'alert-003',
+        shelterId: 'shelter-001',
+        type: 'emergency',
+        title: 'Emergency Alert',
+        description: 'Evacuation required',
+        priority: 'critical',
+        timestamp: Date.now(),
+        status: 'active',
+        createdBy: 'operator-001'
+      };
+
+      // Simulate WebSocket alert
+      act(() => {
+        callbacks.onAlert(newAlert);
+      });
+
+      expect(result.current.state.alerts[newAlert.alertId]).toEqual(newAlert);
+      expect(result.current.state.lastUpdated).toBeInstanceOf(Date);
+    });
+
+    it('should handle connection state changes', async () => {
+      const { result } = renderHook(() => useRealtimeData(), { wrapper });
+
+      const newConnectionState = {
+        status: 'connected' as const,
+        reconnectAttempts: 0
+      };
+
+      act(() => {
+        callbacks.onConnectionStateChange(newConnectionState);
+      });
+
+      expect(result.current.state.connectionState).toEqual(newConnectionState);
+    });
+  });
+});
+
+describe('useShelters Hook', () => {
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <RealtimeDataProvider>{children}</RealtimeDataProvider>
+  );
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockWebSocketService.getWebSocketService.mockReturnValue(mockWebSocketServiceInstance as any);
+    mockApiService.getApiService.mockReturnValue(mockApiServiceInstance as any);
+    mockAuthHook.useAuth.mockReturnValue(mockAuth);
+    mockApiServiceInstance.getShelters.mockResolvedValue(testShelters);
+    mockApiServiceInstance.getAlerts.mockResolvedValue(testAlerts);
+    mockWebSocketServiceInstance.getConnectionState.mockReturnValue({
+      status: 'disconnected',
+      reconnectAttempts: 0
+    });
+  });
+
+  it('should return shelters as an array', async () => {
+    const { result } = renderHook(() => useShelters(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current).toHaveLength(2);
+    });
+    
+    expect(result.current[0].shelterId).toBe('shelter-001');
+    expect(result.current[1].shelterId).toBe('shelter-002');
+  });
+
+  it('should return empty array when no shelters', () => {
+    mockApiServiceInstance.getShelters.mockResolvedValue([]);
+    
+    const { result } = renderHook(() => useShelters(), { wrapper });
+
+    expect(result.current).toEqual([]);
+  });
+});
+
+describe('useAlerts Hook', () => {
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <RealtimeDataProvider>{children}</RealtimeDataProvider>
+  );
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockWebSocketService.getWebSocketService.mockReturnValue(mockWebSocketServiceInstance as any);
+    mockApiService.getApiService.mockReturnValue(mockApiServiceInstance as any);
+    mockAuthHook.useAuth.mockReturnValue(mockAuth);
+    mockApiServiceInstance.getShelters.mockResolvedValue(testShelters);
+    mockApiServiceInstance.getAlerts.mockResolvedValue(testAlerts);
+    mockWebSocketServiceInstance.getConnectionState.mockReturnValue({
+      status: 'disconnected',
+      reconnectAttempts: 0
+    });
+  });
+
+  it('should return alerts as an array', async () => {
+    const { result } = renderHook(() => useAlerts(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current).toHaveLength(2);
+    });
+    
+    expect(result.current[0].alertId).toBe('alert-001');
+    expect(result.current[1].alertId).toBe('alert-002');
+  });
+});
+
+describe('useShelterStats Hook', () => {
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <RealtimeDataProvider>{children}</RealtimeDataProvider>
+  );
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockWebSocketService.getWebSocketService.mockReturnValue(mockWebSocketServiceInstance as any);
+    mockApiService.getApiService.mockReturnValue(mockApiServiceInstance as any);
+    mockAuthHook.useAuth.mockReturnValue(mockAuth);
+    mockApiServiceInstance.getShelters.mockResolvedValue(testShelters);
+    mockApiServiceInstance.getAlerts.mockResolvedValue(testAlerts);
+    mockWebSocketServiceInstance.getConnectionState.mockReturnValue({
+      status: 'disconnected',
+      reconnectAttempts: 0
+    });
+  });
+
+  it('should calculate correct shelter statistics', async () => {
+    const { result } = renderHook(() => useShelterStats(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.total).toBe(2);
+    });
+    
+    const stats = result.current;
+    expect(stats.operational).toBe(1); // Only shelter-001 is available
+    expect(stats.totalCapacity).toBe(175); // 100 + 75
+    expect(stats.currentOccupancy).toBe(135); // 60 + 75
+    expect(stats.availableCapacity).toBe(40); // (100-60) + (75-75)
+  });
+
+  it('should handle empty shelter data', () => {
+    mockApiServiceInstance.getShelters.mockResolvedValue([]);
+    
+    const { result } = renderHook(() => useShelterStats(), { wrapper });
+
+    const stats = result.current;
+    expect(stats.total).toBe(0);
+    expect(stats.operational).toBe(0);
+    expect(stats.totalCapacity).toBe(0);
+    expect(stats.currentOccupancy).toBe(0);
+    expect(stats.availableCapacity).toBe(0);
+  });
+});
+
+describe('Integration with Authentication', () => {
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <RealtimeDataProvider>{children}</RealtimeDataProvider>
+  );
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockWebSocketService.getWebSocketService.mockReturnValue(mockWebSocketServiceInstance as any);
+    mockApiService.getApiService.mockReturnValue(mockApiServiceInstance as any);
+    mockApiServiceInstance.getShelters.mockResolvedValue(testShelters);
+    mockApiServiceInstance.getAlerts.mockResolvedValue(testAlerts);
+    mockWebSocketServiceInstance.getConnectionState.mockReturnValue({
+      status: 'disconnected',
+      reconnectAttempts: 0
+    });
+  });
+
+  it('should not initialize when user is not authenticated', () => {
+    mockAuthHook.useAuth.mockReturnValue({
+      ...mockAuth,
+      isAuthenticated: false,
+      token: null
+    });
+
+    const { result } = renderHook(() => useRealtimeData(), { wrapper });
+
+    expect(result.current.state.isLoading).toBe(true);
+    expect(mockApiServiceInstance.getShelters).not.toHaveBeenCalled();
+    expect(mockWebSocketServiceInstance.connect).not.toHaveBeenCalled();
+  });
+
+  it('should initialize when user becomes authenticated', async () => {
+    mockAuthHook.useAuth.mockReturnValue(mockAuth);
+    renderHook(() => useRealtimeData(), { wrapper });
+
+    await waitFor(() => {
+      expect(mockApiServiceInstance.getShelters).toHaveBeenCalled();
+    });
+    
+    await waitFor(() => {
+      expect(mockWebSocketServiceInstance.connect).toHaveBeenCalled();
+    });
+  });
+});
+
+describe('useRealtimeData Hook', () => {
+  let callbacks: any;
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    
+    // Mock WebSocket service
+    mockWebSocketService.getWebSocketService.mockReturnValue(mockWebSocketServiceInstance as any);
+    mockWebSocketServiceInstance.getConnectionState.mockReturnValue({
+      status: 'disconnected',
+      reconnectAttempts: 0
+    });
+    
+    // Mock API service
+    mockApiService.getApiService.mockReturnValue(mockApiServiceInstance as any);
+    mockApiServiceInstance.getShelters.mockResolvedValue(testShelters);
+    mockApiServiceInstance.getAlerts.mockResolvedValue(testAlerts);
+    
+    // Mock auth hook
+    mockAuthHook.useAuth.mockReturnValue(mockAuth);
+
+    // Capture WebSocket callbacks
+    mockWebSocketServiceInstance.connect.mockImplementation((token: string, cb: any) => {
+      callbacks = cb;
+    });
+
+    // Mock console methods
+    jest.spyOn(console, 'error').mockImplementation(() => {});
+    jest.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <RealtimeDataProvider>{children}</RealtimeDataProvider>
+  );
+
+  describe('RealtimeDataProvider', () => {
+    it('should initialize with loading state', () => {
+      const { result } = renderHook(() => useRealtimeData(), { wrapper });
+
+      expect(result.current.state.isLoading).toBe(true);
+      expect(result.current.state.shelters).toEqual({});
+      expect(result.current.state.alerts).toEqual({});
+      expect(result.current.state.connectionState.status).toBe('disconnected');
+      expect(result.current.state.error).toBeNull();
+    });
+
+    it('should fetch initial data when authenticated', async () => {
+      const { result } = renderHook(() => useRealtimeData(), { wrapper });
+
+      await waitFor(() => {
+        expect(mockApiServiceInstance.getShelters).toHaveBeenCalled();
+      });
+      
+      await waitFor(() => {
+        expect(mockApiServiceInstance.getAlerts).toHaveBeenCalled();
+      });
+
+      await waitFor(() => {
+        expect(result.current.state.isLoading).toBe(false);
+      });
+      
+      await waitFor(() => {
+        expect(Object.keys(result.current.state.shelters)).toHaveLength(2);
+      });
+      
+      await waitFor(() => {
+        expect(Object.keys(result.current.state.alerts)).toHaveLength(2);
+      });
+    });
+
+    it('should connect to WebSocket when authenticated', async () => {
+      renderHook(() => useRealtimeData(), { wrapper });
+
+      await waitFor(() => {
+        expect(mockWebSocketServiceInstance.connect).toHaveBeenCalledWith(
+          mockAuth.token,
+          expect.objectContaining({
+            onShelterUpdate: expect.any(Function),
+            onAlert: expect.any(Function),
+            onConnectionStateChange: expect.any(Function)
+          })
+        );
+      });
+    });
+
+    it('should not connect when not authenticated', () => {
+      mockAuthHook.useAuth.mockReturnValue({
+        ...mockAuth,
+        isAuthenticated: false,
+        token: null
+      });
+
+      renderHook(() => useRealtimeData(), { wrapper });
+
+      expect(mockWebSocketServiceInstance.connect).not.toHaveBeenCalled();
+    });
+
+    it('should handle API errors gracefully', async () => {
+      const error = new Error('API Error');
+      mockApiServiceInstance.getShelters.mockRejectedValue(error);
+
+      const { result } = renderHook(() => useRealtimeData(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.state.error).toContain('Failed to load initial data');
+      });
+      
+      await waitFor(() => {
+        expect(result.current.state.isLoading).toBe(false);
+      });
+    });
+
+    it('should disconnect WebSocket on unmount', () => {
+      const { unmount } = renderHook(() => useRealtimeData(), { wrapper });
+
+      unmount();
+
+      expect(mockWebSocketServiceInstance.disconnect).toHaveBeenCalled();
+    });
+  });
+
+  describe('Real-time Updates', () => {
+    it('should handle shelter updates via WebSocket', async () => {
+      const { result } = renderHook(() => useRealtimeData(), { wrapper });
+
+      // Wait for initial data load
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      const updatedShelter: Shelter = {
+        ...testShelters[0],
+        capacity: { maximum: 100, current: 80, available: 20 },
+        status: ShelterStatus.LIMITED
+      };
+
+      // Simulate WebSocket shelter update
+      act(() => {
+        callbacks.onShelterUpdate(updatedShelter);
+      });
+
+      expect(result.current.shelters[updatedShelter.shelterId]).toEqual(updatedShelter);
+      expect(result.current.lastUpdated).toBeInstanceOf(Date);
+    });
+
+    it('should handle new alerts via WebSocket', async () => {
+      const { result } = renderHook(() => useRealtimeData(), { wrapper });
+
+      // Wait for initial data load
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+      });
+
+      const newAlert: Alert = {
+        alertId: 'alert-003',
+        shelterId: 'shelter-001',
+        alertType: 'emergency',
+        message: 'Evacuation required',
+        priority: 'critical',
+        timestamp: '2025-09-20T11:00:00Z',
+        status: 'active'
+      };
+
+      // Simulate WebSocket alert
+      act(() => {
+        callbacks.onAlert(newAlert);
+      });
+
+      expect(result.current.alerts[newAlert.alertId]).toEqual(newAlert);
+      expect(result.current.lastUpdated).toBeInstanceOf(Date);
+    });
+
+    it('should handle connection state changes', async () => {
+      const { result } = renderHook(() => useRealtimeData(), { wrapper });
+
+      const newConnectionState = {
+        status: 'connected' as const,
+        reconnectAttempts: 0
+      };
+
+      act(() => {
+        callbacks.onConnectionStateChange(newConnectionState);
+      });
+
+      expect(result.current.connectionState).toEqual(newConnectionState);
+    });
+  });
+
+  describe('Error Handling', () => {
+    it('should handle WebSocket connection errors', async () => {
+      const { result } = renderHook(() => useRealtimeData(), { wrapper });
+
+      const errorState = {
+        status: 'error' as const,
+        reconnectAttempts: 3,
+        lastError: 'Connection failed'
+      };
+
+      act(() => {
+        callbacks.onConnectionStateChange(errorState);
+      });
+
+      expect(result.current.connectionState).toEqual(errorState);
+    });
+
+    it('should continue working when WebSocket fails but API succeeds', async () => {
+      mockWebSocketServiceInstance.connect.mockImplementation(() => {
+        throw new Error('WebSocket failed');
+      });
+
+      const { result } = renderHook(() => useRealtimeData(), { wrapper });
+
+      await waitFor(() => {
+        expect(result.current.isLoading).toBe(false);
+        expect(Object.keys(result.current.shelters)).toHaveLength(2);
+      });
+
+      // WebSocket failed but API data should still be available
+      expect(result.current.error).toBeNull();
+    });
+  });
+});
+
+describe('useShelters Hook', () => {
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <RealtimeDataProvider>{children}</RealtimeDataProvider>
+  );
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockWebSocketService.getWebSocketService.mockReturnValue(mockWebSocketServiceInstance as any);
+    mockApiService.getApiService.mockReturnValue(mockApiServiceInstance as any);
+    mockAuthHook.useAuth.mockReturnValue(mockAuth);
+    mockApiServiceInstance.getShelters.mockResolvedValue(testShelters);
+    mockApiServiceInstance.getAlerts.mockResolvedValue(testAlerts);
+    mockWebSocketServiceInstance.getConnectionState.mockReturnValue({
+      status: 'disconnected',
+      reconnectAttempts: 0
+    });
+  });
+
+  it('should return shelters as an array', async () => {
+    const { result } = renderHook(() => useShelters(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current).toHaveLength(2);
+      expect(result.current[0].shelterId).toBe('shelter-001');
+      expect(result.current[1].shelterId).toBe('shelter-002');
+    });
+  });
+
+  it('should return empty array when no shelters', () => {
+    mockApiServiceInstance.getShelters.mockResolvedValue([]);
+    
+    const { result } = renderHook(() => useShelters(), { wrapper });
+
+    expect(result.current).toEqual([]);
+  });
+
+  it('should update when shelter data changes', async () => {
+    let callbacks: any;
+    mockWebSocketServiceInstance.connect.mockImplementation((token: string, cb: any) => {
+      callbacks = cb;
+    });
+
+    const { result } = renderHook(() => useShelters(), { wrapper });
+
+    // Wait for initial data
+    await waitFor(() => {
+      expect(result.current).toHaveLength(2);
+    });
+
+    const updatedShelter: Shelter = {
+      ...testShelters[0],
+      status: ShelterStatus.FULL
+    };
+
+    // Simulate real-time update
+    act(() => {
+      callbacks.onShelterUpdate(updatedShelter);
+    });
+
+    expect(result.current[0].status).toBe(ShelterStatus.FULL);
+  });
+});
+
+describe('useAlerts Hook', () => {
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <RealtimeDataProvider>{children}</RealtimeDataProvider>
+  );
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockWebSocketService.getWebSocketService.mockReturnValue(mockWebSocketServiceInstance as any);
+    mockApiService.getApiService.mockReturnValue(mockApiServiceInstance as any);
+    mockAuthHook.useAuth.mockReturnValue(mockAuth);
+    mockApiServiceInstance.getShelters.mockResolvedValue(testShelters);
+    mockApiServiceInstance.getAlerts.mockResolvedValue(testAlerts);
+    mockWebSocketServiceInstance.getConnectionState.mockReturnValue({
+      status: 'disconnected',
+      reconnectAttempts: 0
+    });
+  });
+
+  it('should return alerts as an array', async () => {
+    const { result } = renderHook(() => useAlerts(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current).toHaveLength(2);
+      expect(result.current[0].alertId).toBe('alert-001');
+      expect(result.current[1].alertId).toBe('alert-002');
+    });
+  });
+
+  it('should return active alerts first', async () => {
+    const { result } = renderHook(() => useAlerts(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current[0].status).toBe('active');
+      expect(result.current[1].status).toBe('acknowledged');
+    });
+  });
+
+  it('should update when new alerts arrive', async () => {
+    let callbacks: any;
+    mockWebSocketServiceInstance.connect.mockImplementation((token: string, cb: any) => {
+      callbacks = cb;
+    });
+
+    const { result } = renderHook(() => useAlerts(), { wrapper });
+
+    // Wait for initial data
+    await waitFor(() => {
+      expect(result.current).toHaveLength(2);
+    });
+
+    const newAlert: Alert = {
+      alertId: 'alert-003',
+      shelterId: 'shelter-001',
+      alertType: 'emergency',
+      message: 'New emergency alert',
+      priority: 'critical',
+      timestamp: '2025-09-20T11:30:00Z',
+      status: 'active'
+    };
+
+    // Simulate real-time alert
+    act(() => {
+      callbacks.onAlert(newAlert);
+    });
+
+    expect(result.current).toHaveLength(3);
+    expect(result.current.find(a => a.alertId === 'alert-003')).toEqual(newAlert);
+  });
+});
+
+describe('useShelterStats Hook', () => {
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <RealtimeDataProvider>{children}</RealtimeDataProvider>
+  );
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockWebSocketService.getWebSocketService.mockReturnValue(mockWebSocketServiceInstance as any);
+    mockApiService.getApiService.mockReturnValue(mockApiServiceInstance as any);
+    mockAuthHook.useAuth.mockReturnValue(mockAuth);
+    mockApiServiceInstance.getShelters.mockResolvedValue(testShelters);
+    mockApiServiceInstance.getAlerts.mockResolvedValue(testAlerts);
+    mockWebSocketServiceInstance.getConnectionState.mockReturnValue({
+      status: 'disconnected',
+      reconnectAttempts: 0
+    });
+  });
+
+  it('should calculate correct shelter statistics', async () => {
+    const { result } = renderHook(() => useShelterStats(), { wrapper });
+
+    await waitFor(() => {
+      const stats = result.current;
+      
+      expect(stats.totalShelters).toBe(2);
+      expect(stats.availableShelters).toBe(1); // Only shelter-001 is available
+      expect(stats.totalCapacity).toBe(175); // 100 + 75
+      expect(stats.currentOccupancy).toBe(135); // 60 + 75
+      expect(stats.availableCapacity).toBe(40); // 40 + 0
+      expect(stats.occupancyRate).toBe(77); // 135/175 * 100
+    });
+  });
+
+  it('should calculate status breakdown correctly', async () => {
+    const { result } = renderHook(() => useShelterStats(), { wrapper });
+
+    await waitFor(() => {
+      const stats = result.current;
+      
+      expect(stats.statusBreakdown.AVAILABLE).toBe(1);
+      expect(stats.statusBreakdown.FULL).toBe(1);
+      expect(stats.statusBreakdown.LIMITED).toBe(0);
+      expect(stats.statusBreakdown.EMERGENCY).toBe(0);
+      expect(stats.statusBreakdown.OFFLINE).toBe(0);
+    });
+  });
+
+  it('should handle empty shelter data', () => {
+    mockApiServiceInstance.getShelters.mockResolvedValue([]);
+    
+    const { result } = renderHook(() => useShelterStats(), { wrapper });
+
+    const stats = result.current;
+    
+    expect(stats.totalShelters).toBe(0);
+    expect(stats.availableShelters).toBe(0);
+    expect(stats.totalCapacity).toBe(0);
+    expect(stats.currentOccupancy).toBe(0);
+    expect(stats.availableCapacity).toBe(0);
+    expect(stats.occupancyRate).toBe(0);
+  });
+
+  it('should update stats when shelter data changes', async () => {
+    let callbacks: any;
+    mockWebSocketServiceInstance.connect.mockImplementation((token: string, cb: any) => {
+      callbacks = cb;
+    });
+
+    const { result } = renderHook(() => useShelterStats(), { wrapper });
+
+    // Wait for initial data
+    await waitFor(() => {
+      expect(result.current.totalShelters).toBe(2);
+    });
+
+    const updatedShelter: Shelter = {
+      ...testShelters[1],
+      capacity: { maximum: 75, current: 50, available: 25 },
+      status: ShelterStatus.AVAILABLE
+    };
+
+    // Simulate real-time update
+    act(() => {
+      callbacks.onShelterUpdate(updatedShelter);
+    });
+
+    const updatedStats = result.current;
+    expect(updatedStats.availableShelters).toBe(2); // Both shelters now available
+    expect(updatedStats.currentOccupancy).toBe(110); // 60 + 50
+    expect(updatedStats.availableCapacity).toBe(65); // 40 + 25
+  });
+});
+
+describe('Integration with Authentication', () => {
+  const wrapper = ({ children }: { children: React.ReactNode }) => (
+    <RealtimeDataProvider>{children}</RealtimeDataProvider>
+  );
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    mockWebSocketService.getWebSocketService.mockReturnValue(mockWebSocketServiceInstance as any);
+    mockApiService.getApiService.mockReturnValue(mockApiServiceInstance as any);
+    mockApiServiceInstance.getShelters.mockResolvedValue(testShelters);
+    mockApiServiceInstance.getAlerts.mockResolvedValue(testAlerts);
+    mockWebSocketServiceInstance.getConnectionState.mockReturnValue({
+      status: 'disconnected',
+      reconnectAttempts: 0
+    });
+  });
+
+  it('should not initialize when user is not authenticated', () => {
+    mockAuthHook.useAuth.mockReturnValue({
+      ...mockAuth,
+      isAuthenticated: false,
+      token: null
+    });
+
+    const { result } = renderHook(() => useRealtimeData(), { wrapper });
+
+    expect(result.current.isLoading).toBe(true);
+    expect(mockApiServiceInstance.getShelters).not.toHaveBeenCalled();
+    expect(mockWebSocketServiceInstance.connect).not.toHaveBeenCalled();
+  });
+
+  it('should initialize when user becomes authenticated', async () => {
+    // Start with unauthenticated user
+    const { rerender } = renderHook(() => useRealtimeData(), { wrapper });
+
+    expect(mockApiServiceInstance.getShelters).not.toHaveBeenCalled();
+
+    // Update to authenticated user
+    mockAuthHook.useAuth.mockReturnValue(mockAuth);
+    rerender();
+
+    await waitFor(() => {
+      expect(mockApiServiceInstance.getShelters).toHaveBeenCalled();
+      expect(mockWebSocketServiceInstance.connect).toHaveBeenCalled();
+    });
+  });
+
+  it('should disconnect when user logs out', async () => {
+    // Start with authenticated user
+    mockAuthHook.useAuth.mockReturnValue(mockAuth);
+    const { rerender } = renderHook(() => useRealtimeData(), { wrapper });
+
+    await waitFor(() => {
+      expect(mockWebSocketServiceInstance.connect).toHaveBeenCalled();
+    });
+
+    // Update to unauthenticated user
+    mockAuthHook.useAuth.mockReturnValue({
+      ...mockAuth,
+      isAuthenticated: false,
+      token: null
+    });
+    rerender();
+
+    expect(mockWebSocketServiceInstance.disconnect).toHaveBeenCalled();
+  });
+});

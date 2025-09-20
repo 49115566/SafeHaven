@@ -3,7 +3,9 @@ import { Routes, Route, Navigate } from 'react-router-dom';
 import DashboardPage from './pages/DashboardPage';
 import LoginPage from './pages/LoginPage';
 import { useAuth } from './hooks/useAuth';
+import { RealtimeDataProvider } from './hooks/useRealtimeData';
 import LoadingSpinner from './components/LoadingSpinner';
+import ErrorBoundary from './components/ErrorBoundary';
 
 function App() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -13,26 +15,39 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Routes>
-        <Route 
-          path="/login" 
-          element={
-            isAuthenticated ? <Navigate to="/dashboard" replace /> : <LoginPage />
-          } 
-        />
-        <Route 
-          path="/dashboard" 
-          element={
-            isAuthenticated ? <DashboardPage /> : <Navigate to="/login" replace />
-          } 
-        />
-        <Route 
-          path="/" 
-          element={<Navigate to="/dashboard" replace />} 
-        />
-      </Routes>
-    </div>
+    <ErrorBoundary>
+      <div className="min-h-screen bg-gray-50">
+        {isAuthenticated ? (
+          <RealtimeDataProvider>
+            <Routes>
+              <Route 
+                path="/login" 
+                element={<Navigate to="/dashboard" replace />} 
+              />
+              <Route 
+                path="/dashboard" 
+                element={<DashboardPage />} 
+              />
+              <Route 
+                path="/" 
+                element={<Navigate to="/dashboard" replace />} 
+              />
+            </Routes>
+          </RealtimeDataProvider>
+        ) : (
+          <Routes>
+            <Route 
+              path="/login" 
+              element={<LoginPage />} 
+            />
+            <Route 
+              path="*" 
+              element={<Navigate to="/login" replace />} 
+            />
+          </Routes>
+        )}
+      </div>
+    </ErrorBoundary>
   );
 }
 
