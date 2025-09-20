@@ -232,4 +232,4 @@ npm start
 
 ---
 
-**🏆 Let's build something amazing! Good luck Team SaveHaven!**
+*SafeHaven Connect - Connecting safety, saving lives*
