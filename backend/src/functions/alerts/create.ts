@@ -1,18 +1,24 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, PutCommand } from '@aws-sdk/lib-dynamodb';
-import { SNSClient, PublishCommand } from '@aws-sdk/client-sns';
+import { AlertService } from '../../services/alertService';
 import { responseHelper } from '../../utils/responseHelper';
 import { validateAlertCreation } from '../../utils/validation';
-import { v4 as uuidv4 } from 'uuid';
+import { AuthService } from '../../services/authService';
 
-const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION });
-const docClient = DynamoDBDocumentClient.from(dynamoClient);
-const snsClient = new SNSClient({ region: process.env.AWS_REGION });
+const alertService = new AlertService();
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
-    const alertData = JSON.parse(event.body || '{}');
+    // Check if request body exists
+    if (!event.body) {
+      return responseHelper.badRequest('Request body is required');
+    }
+
+    let alertData;
+    try {
+      alertData = JSON.parse(event.body);
+    } catch (jsonError) {
+      return responseHelper.badRequest('Invalid JSON in request body');
+    }
 
     // Validate input
     const validation = validateAlertCreation(alertData);
@@ -20,51 +26,24 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       return responseHelper.badRequest(validation.errors.join(', '));
     }
 
-    const alertId = uuidv4();
-    const timestamp = new Date().toISOString();
+    // Get user context from authorizer (TODO: implement proper auth context extraction)
+    const createdBy = event.requestContext.authorizer?.userId || 'unknown-user';
 
-    const alert = {
-      alertId,
+    // Create alert using AlertService
+    const alert = await alertService.createAlert({
       shelterId: alertData.shelterId,
       type: alertData.type,
-      description: alertData.description,
-      title: alertData.title,
-      severity: alertData.severity,
       priority: alertData.priority,
-      status: 'open',
-      createdBy: 'user-123', // TODO: Get from auth context
-      timestamp: Date.now(), // Unix timestamp for GSI sorting
-      createdAt: timestamp,
-      updatedAt: timestamp
-    };
-
-    // Save alert to DynamoDB
-    await docClient.send(new PutCommand({
-      TableName: process.env.ALERTS_TABLE,
-      Item: alert
-    }));
-
-    // Publish to SNS for real-time notifications
-    if (process.env.SHELTER_UPDATES_TOPIC) {
-      const message = {
-        messageType: 'shelter.alert.created',
-        alert,
-        timestamp,
-        priority: alert.priority
-      };
-
-      await snsClient.send(new PublishCommand({
-        TopicArn: process.env.SHELTER_UPDATES_TOPIC,
-        Message: JSON.stringify(message),
-        Subject: `Emergency Alert: ${alert.type}`
-      }));
-    }
+      title: alertData.title,
+      description: alertData.description,
+      createdBy: createdBy
+    });
 
     return responseHelper.success({
-      alertId,
+      alertId: alert.alertId,
       message: 'Alert created successfully',
       alert
-    });
+    }, 201);
 
   } catch (error) {
     console.error('Error creating alert:', error);

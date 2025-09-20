@@ -54,8 +54,8 @@ export const handler: APIGatewayProxyHandler = withErrorHandler(async (event) =>
   
   const { email, password } = requestData;
   
-  // Look up user in DynamoDB
-  const user = await AuthService.getUserWithPassword(email);
+  // Look up user in DynamoDB by email
+  const user = await AuthService.getUserByEmailWithPassword(email);
   
   if (!user) {
     // Don't reveal if user exists or not for security
@@ -77,7 +77,7 @@ export const handler: APIGatewayProxyHandler = withErrorHandler(async (event) =>
   // Update last login timestamp (async, don't wait)
   const updateCommand = new UpdateCommand({
     TableName: process.env.USERS_TABLE!,
-    Key: { userId: email },
+    Key: { userId: user.userId },
     UpdateExpression: 'SET lastLogin = :lastLogin',
     ExpressionAttributeValues: {
       ':lastLogin': new Date().toISOString()

@@ -1,7 +1,7 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, GetCommand } from '@aws-sdk/lib-dynamodb';
+import { DynamoDBDocumentClient, GetCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
 
 // Define types locally to avoid module resolution issues in tests
 export enum UserRole {
@@ -110,6 +110,23 @@ export class AuthService {
 
     const result = await dynamo.send(command);
     return result.Item ? (result.Item as User & { passwordHash: string }) : null;
+  }
+
+  /**
+   * Get user by email from database with password hash (for login)
+   */
+  static async getUserByEmailWithPassword(email: string): Promise<(User & { passwordHash: string }) | null> {
+    const command = new QueryCommand({
+      TableName: process.env.USERS_TABLE!,
+      IndexName: 'EmailIndex',
+      KeyConditionExpression: 'email = :email',
+      ExpressionAttributeValues: {
+        ':email': email
+      }
+    });
+
+    const result = await dynamo.send(command);
+    return result.Items && result.Items.length > 0 ? (result.Items[0] as User & { passwordHash: string }) : null;
   }
 
   /**

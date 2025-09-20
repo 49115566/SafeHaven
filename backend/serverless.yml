@@ -131,39 +131,6 @@ custom:
     websocketPort: 3011
 
 functions:
-  # Test Functions
-  simpleTest:
-    handler: dist/functions/test/simple.handler
-    events:
-      - http:
-          path: test/simple
-          method: get
-          cors: true
-
-  testRegister:
-    handler: dist/functions/test/register-simple.handler
-    events:
-      - http:
-          path: test/register
-          method: post
-          cors: true
-
-  testDynamoDB:
-    handler: dist/functions/test/dynamodb-test.handler
-    events:
-      - http:
-          path: test/dynamodb
-          method: get
-          cors: true
-
-  testDynamoDBv2:
-    handler: dist/functions/test/dynamodb-v2-test.handler
-    events:
-      - http:
-          path: test/dynamodb-v2
-          method: get
-          cors: true
-
   # Authentication Functions
   authLogin:
     handler: dist/functions/auth/login.handler
@@ -405,7 +372,7 @@ resources:
           - AttributeName: alertId
             KeyType: HASH
         GlobalSecondaryIndexes:
-          - IndexName: shelterId-timestamp-index
+          - IndexName: ShelterTimestampIndex
             KeySchema:
               - AttributeName: shelterId
                 KeyType: HASH

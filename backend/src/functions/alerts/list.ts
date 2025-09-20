@@ -1,57 +1,26 @@
 import { APIGatewayProxyHandler } from 'aws-lambda';
-import { DynamoDBClient } from '@aws-sdk/client-dynamodb';
-import { DynamoDBDocumentClient, ScanCommand, QueryCommand } from '@aws-sdk/lib-dynamodb';
+import { AlertService } from '../../services/alertService';
 import { responseHelper } from '../../utils/responseHelper';
+import { AlertStatus, AlertPriority } from '../../models/types';
 
-const dynamoClient = new DynamoDBClient({ region: process.env.AWS_REGION });
-const docClient = DynamoDBDocumentClient.from(dynamoClient);
+const alertService = new AlertService();
 
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
-    const { shelterId, status, priority } = event.queryStringParameters || {};
+    const { shelterId, status, priority, limit } = event.queryStringParameters || {};
     
-    let command;
+    let alerts;
+    const limitNum = limit ? parseInt(limit, 10) : undefined;
     
     if (shelterId) {
-      // Query alerts for specific shelter using GSI
-      command = new QueryCommand({
-        TableName: process.env.ALERTS_TABLE,
-        IndexName: 'shelterId-timestamp-index',
-        KeyConditionExpression: 'shelterId = :shelterId',
-        ExpressionAttributeValues: {
-          ':shelterId': shelterId
-        },
-        ScanIndexForward: false // Most recent first
-      });
+      // Get alerts for specific shelter
+      alerts = await alertService.getAlertsByShelter(shelterId, limitNum);
     } else {
-      // Scan all alerts
-      const filterExpressions = [];
-      const expressionAttributeValues: any = {};
-      
-      if (status) {
-        filterExpressions.push('#status = :status');
-        expressionAttributeValues[':status'] = status;
-      }
-      
-      if (priority) {
-        filterExpressions.push('priority = :priority');
-        expressionAttributeValues[':priority'] = priority;
-      }
-      
-      command = new ScanCommand({
-        TableName: process.env.ALERTS_TABLE,
-        FilterExpression: filterExpressions.length > 0 ? filterExpressions.join(' AND ') : undefined,
-        ExpressionAttributeValues: Object.keys(expressionAttributeValues).length > 0 ? expressionAttributeValues : undefined,
-        ExpressionAttributeNames: status ? { '#status': 'status' } : undefined
-      });
+      // Get all alerts with optional filtering
+      const statusFilter = status ? status as AlertStatus : undefined;
+      const priorityFilter = priority ? priority as AlertPriority : undefined;
+      alerts = await alertService.getAllAlerts(statusFilter, priorityFilter, limitNum);
     }
-
-    const result = await docClient.send(command);
-    
-    // Sort by timestamp descending (most recent first)
-    const alerts = (result.Items || []).sort((a, b) => 
-      (b.timestamp || 0) - (a.timestamp || 0)
-    );
 
     return responseHelper.success({
       alerts,
@@ -59,7 +28,8 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       filters: {
         shelterId: shelterId || null,
         status: status || null,
-        priority: priority || null
+        priority: priority || null,
+        limit: limitNum || null
       }
     });
 

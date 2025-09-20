@@ -46,6 +46,7 @@
     "demo:all": "node scripts/demo-scenarios.js all"
   },
   "devDependencies": {
+    "@aws-sdk/client-bedrock-runtime": "^3.893.0",
     "concurrently": "^8.2.2",
     "typescript": "^5.9.2"
   },
@@ -67,5 +68,8 @@
     "hackathon"
   ],
   "author": "Team SaveHaven",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "react-native": "^0.81.4"
+  }
 }

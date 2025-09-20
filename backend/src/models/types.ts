@@ -1,21 +1,33 @@
-// Re-export shared types for consistency
-export * from 'safehaven-shared';
+// Shared types across all SafeHaven Connect applications
+// This ensures type consistency between backend, mobile, and dashboard
 
-export interface ShelterStatusUpdate {
+export interface Shelter {
   shelterId: string;
-  capacity?: {
+  name: string;
+  location: {
+    latitude: number;
+    longitude: number;
+    address: string;
+  };
+  capacity: {
     current: number;
     maximum: number;
   };
-  resources?: Partial<{
+  resources: {
     food: ResourceStatus;
     water: ResourceStatus;
     medical: ResourceStatus;
     bedding: ResourceStatus;
-  }>;
-  status?: ShelterStatus;
-  urgentNeeds?: string[];
-  timestamp: string;
+  };
+  status: ShelterStatus;
+  operatorId: string;
+  contactInfo: {
+    phone: string;
+    email: string;
+  };
+  urgentNeeds: string[];
+  lastUpdated: string; // ISO timestamp
+  createdAt: string; // ISO timestamp
 }
 
 export enum ShelterStatus {
@@ -36,7 +48,6 @@ export enum ResourceStatus {
 export interface User {
   userId: string;
   email: string;
-  passwordHash: string;
   role: UserRole;
   profile: {
     firstName: string;
@@ -45,6 +56,24 @@ export interface User {
     organization?: string;
   };
   shelterId?: string; // For shelter operators
+  isActive: boolean;
+  createdAt: string;
+  lastLogin?: string;
+  passwordHash?: string; // For internal use
+}
+
+// Public user interface (without sensitive data)
+export interface PublicUser {
+  userId: string;
+  email: string;
+  role: UserRole;
+  profile: {
+    firstName: string;
+    lastName: string;
+    phone?: string;
+    organization?: string;
+  };
+  shelterId?: string;
   isActive: boolean;
   createdAt: string;
   lastLogin?: string;
@@ -94,4 +123,58 @@ export enum AlertStatus {
   ACKNOWLEDGED = 'acknowledged',
   IN_PROGRESS = 'in_progress',
   RESOLVED = 'resolved'
+}
+
+// API Response Types
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+  timestamp: string;
+}
+
+// Backend-specific types
+export interface ShelterStatusUpdate {
+  shelterId: string;
+  capacity?: {
+    current: number;
+    maximum: number;
+  };
+  resources?: Partial<{
+    food: ResourceStatus;
+    water: ResourceStatus;
+    medical: ResourceStatus;
+    bedding: ResourceStatus;
+  }>;
+  status?: ShelterStatus;
+  urgentNeeds?: string[];
+  timestamp: string;
+}
+
+// Database Record types
+export interface AlertRecord extends Alert {
+  alertId: string; // Primary key
+  GSI1PK?: string; // GSI partition key (e.g., 'SHELTER#shelter-123')
+  GSI1SK?: string; // GSI sort key (e.g., 'ALERT#timestamp')
+}
+
+export interface UserRecord extends User {
+  userId: string; // Primary key
+  GSI1PK?: string; // GSI partition key (e.g., 'ROLE#shelter_operator')
+  GSI1SK?: string; // GSI sort key (e.g., 'USER#email')
+}
+
+export interface ShelterRecord extends Shelter {
+  shelterId: string; // Primary key
+  GSI1PK?: string; // GSI partition key (e.g., 'STATUS#available')
+  GSI1SK?: string; // GSI sort key (e.g., 'SHELTER#name')
+}
+
+// JWT and Auth Types
+export interface JWTPayload {
+  userId: string;
+  email: string;
+  role: UserRole;
+  iat?: number;
+  exp?: number;
 }
