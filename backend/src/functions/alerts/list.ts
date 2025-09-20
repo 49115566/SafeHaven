@@ -50,7 +50,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     
     // Sort by timestamp descending (most recent first)
     const alerts = (result.Items || []).sort((a, b) => 
-      new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      (b.timestamp || 0) - (a.timestamp || 0)
     );
 
     return responseHelper.success({
@@ -67,5 +67,4 @@ export const handler: APIGatewayProxyHandler = async (event) => {
     console.error('Error fetching alerts:', error);
     return responseHelper.internalError('Failed to fetch alerts');
   }
-  
 };

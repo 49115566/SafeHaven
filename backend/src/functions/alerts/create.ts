@@ -13,7 +13,7 @@ const snsClient = new SNSClient({ region: process.env.AWS_REGION });
 export const handler: APIGatewayProxyHandler = async (event) => {
   try {
     const alertData = JSON.parse(event.body || '{}');
-    
+
     // Validate input
     const validation = validateAlertCreation(alertData);
     if (!validation.isValid) {
@@ -22,19 +22,20 @@ export const handler: APIGatewayProxyHandler = async (event) => {
 
     const alertId = uuidv4();
     const timestamp = new Date().toISOString();
-    
+
     const alert = {
       alertId,
       shelterId: alertData.shelterId,
-      alertType: alertData.type,
-      message: alertData.description,
+      type: alertData.type,
+      description: alertData.description,
       title: alertData.title,
-      severity: alertData.severity || 'medium',
+      severity: alertData.severity,
+      priority: alertData.priority,
       status: 'open',
+      createdBy: 'user-123', // TODO: Get from auth context
+      timestamp: Date.now(), // Unix timestamp for GSI sorting
       createdAt: timestamp,
-      updatedAt: timestamp,
-      category: alertData.category || 'general',
-      priority: alertData.priority || 'normal'
+      updatedAt: timestamp
     };
 
     // Save alert to DynamoDB
@@ -55,7 +56,7 @@ export const handler: APIGatewayProxyHandler = async (event) => {
       await snsClient.send(new PublishCommand({
         TopicArn: process.env.SHELTER_UPDATES_TOPIC,
         Message: JSON.stringify(message),
-        Subject: `Emergency Alert: ${alert.alertType}`
+        Subject: `Emergency Alert: ${alert.type}`
       }));
     }
 

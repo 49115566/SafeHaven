@@ -379,7 +379,7 @@ resources:
           - AttributeName: alertId
             KeyType: HASH
         GlobalSecondaryIndexes:
-          - IndexName: ShelterTimestampIndex
+          - IndexName: shelterId-timestamp-index
             KeySchema:
               - AttributeName: shelterId
                 KeyType: HASH
