@@ -164,7 +164,7 @@
 - **Services**: Reusable WebSocketService for integration across the application
 
 **Testing Results:**
-- ✅ **Local Deployment**: Successfully running on `ws://localhost:3004`
+- ✅ **Local Deployment**: Successfully running on `ws://localhost:3011`
 - ✅ **Route Configuration**: All WebSocket routes (`$connect`, `$disconnect`, `$default`) operational
 - ✅ **Authentication**: JWT token validation working on connection establishment
 - ✅ **Broadcasting**: Multi-target message broadcasting system functional

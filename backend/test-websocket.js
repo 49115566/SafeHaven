@@ -6,8 +6,8 @@
 const WebSocket = require('ws');
 
 // Test configuration
-const WS_URL = 'ws://localhost:3004';
-const API_URL = 'http://localhost:3003/dev';
+const WS_URL = 'ws://localhost:3011';
+const API_URL = 'http://localhost:3010/dev';
 
 // Mock JWT token for testing (in real scenario, get this from auth/login)
 const MOCK_JWT = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiJ0ZXN0LXVzZXItMSIsImVtYWlsIjoidGVzdEBleGFtcGxlLmNvbSIsInJvbGUiOiJzaGVsdGVyX29wZXJhdG9yIiwiaWF0IjoxNjMyNzI3MjAwLCJleHAiOjk5OTk5OTk5OTl9.test';

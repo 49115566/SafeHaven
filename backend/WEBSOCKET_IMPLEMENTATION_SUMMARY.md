@@ -15,7 +15,7 @@
 ### ✅ **1. WebSocket API Gateway deployed and accessible**
 - **Implementation:** Enabled WebSocket routes in `serverless.yml`
 - **Routes Configured:** `$connect`, `$disconnect`, `$default`
-- **Testing:** Successfully running on `ws://localhost:3004` in development
+- **Testing:** Successfully running on `ws://localhost:3011` in development
 - **Production Ready:** Configured for AWS deployment
 
 ### ✅ **2. Connection management stores connectionId in DynamoDB**
@@ -122,7 +122,7 @@ Global Secondary Index: UserIndex
 ## 🚀 **Development and Testing**
 
 ### **Local Development Setup**
-- **Serverless Offline:** Running on ports 3003 (HTTP) and 3004 (WebSocket)
+- **Serverless Offline:** Running on ports 3010 (HTTP) and 3011 (WebSocket)
 - **All Routes Active:** Connection, disconnection, and message handling working
 - **Authentication Testing:** JWT validation operational
 
