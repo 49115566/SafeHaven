@@ -7,7 +7,9 @@ import {
   TouchableOpacity,
   Alert,
   Dimensions,
-  Platform
+  Platform,
+  TextInput,
+  Modal
 } from 'react-native';
 import Toast from 'react-native-toast-message';
 import { MaterialIcons } from '@expo/vector-icons';
@@ -17,6 +19,7 @@ import { AppState, ShelterStatus, ResourceStatus, ShelterStatusUpdate } from '..
 import { updateShelterStatusAsync, setLoading, setError } from '../store/shelterSlice';
 import { syncService } from '../services/syncService';
 import { offlineService } from '../services/offlineService';
+import { resourceHistoryService } from '../services/resourceHistoryService';
 import { useAppDispatch, useAppSelector } from '../store';
 
 const { width } = Dimensions.get('window');
@@ -38,6 +41,9 @@ export default function StatusUpdateScreen() {
     medical: ResourceStatus.ADEQUATE,
     bedding: ResourceStatus.ADEQUATE
   });
+  const [urgentNeeds, setUrgentNeeds] = useState<string>('');
+  const [showBulkUpdateModal, setShowBulkUpdateModal] = useState<boolean>(false);
+  const [bulkResourceStatus, setBulkResourceStatus] = useState<ResourceStatus>(ResourceStatus.ADEQUATE);
   const [isOnline, setIsOnline] = useState<boolean>(true);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
 
@@ -48,6 +54,7 @@ export default function StatusUpdateScreen() {
       setMaxCapacity(currentShelter.capacity.maximum);
       setShelterStatus(currentShelter.status);
       setResources(currentShelter.resources);
+      setUrgentNeeds(currentShelter.urgentNeeds?.join(', ') || '');
     }
   }, [currentShelter]);
 
@@ -83,7 +90,7 @@ export default function StatusUpdateScreen() {
   };
 
   // Handle resource status updates
-  const updateResourceStatus = (resourceType: keyof typeof resources) => {
+  const updateResourceStatus = async (resourceType: keyof typeof resources) => {
     const statusOrder = [
       ResourceStatus.ADEQUATE,
       ResourceStatus.LOW, 
@@ -93,10 +100,23 @@ export default function StatusUpdateScreen() {
     
     const currentIndex = statusOrder.indexOf(resources[resourceType]);
     const nextIndex = (currentIndex + 1) % statusOrder.length;
+    const previousStatus = resources[resourceType];
+    const newStatus = statusOrder[nextIndex];
+    
+    // Add to resource history
+    if (user && previousStatus !== newStatus) {
+      await resourceHistoryService.addHistoryEntry({
+        timestamp: new Date().toISOString(),
+        resourceType,
+        previousStatus,
+        newStatus,
+        updatedBy: user.profile.firstName + ' ' + user.profile.lastName
+      });
+    }
     
     setResources(prev => ({
       ...prev,
-      [resourceType]: statusOrder[nextIndex]
+      [resourceType]: newStatus
     }));
     setHasUnsavedChanges(true);
   };
@@ -104,6 +124,45 @@ export default function StatusUpdateScreen() {
   // Handle shelter status updates
   const updateStatus = (newStatus: ShelterStatus) => {
     setShelterStatus(newStatus);
+    setHasUnsavedChanges(true);
+  };
+
+  // Handle bulk resource update
+  const handleBulkResourceUpdate = async () => {
+    // Add history entries for each resource that changes
+    if (user) {
+      const resourceTypes = Object.keys(resources) as (keyof typeof resources)[];
+      for (const resourceType of resourceTypes) {
+        if (resources[resourceType] !== bulkResourceStatus) {
+          await resourceHistoryService.addHistoryEntry({
+            timestamp: new Date().toISOString(),
+            resourceType,
+            previousStatus: resources[resourceType],
+            newStatus: bulkResourceStatus,
+            updatedBy: user.profile.firstName + ' ' + user.profile.lastName
+          });
+        }
+      }
+    }
+    
+    setResources({
+      food: bulkResourceStatus,
+      water: bulkResourceStatus,
+      medical: bulkResourceStatus,
+      bedding: bulkResourceStatus
+    });
+    setShowBulkUpdateModal(false);
+    setHasUnsavedChanges(true);
+    Toast.show({
+      type: 'success',
+      text1: 'Bulk Update',
+      text2: `All resources set to ${getResourceStatusLabel(bulkResourceStatus)}`
+    });
+  };
+
+  // Handle urgent needs update
+  const handleUrgentNeedsChange = (text: string) => {
+    setUrgentNeeds(text);
     setHasUnsavedChanges(true);
   };
 
@@ -125,7 +184,8 @@ export default function StatusUpdateScreen() {
           maximum: maxCapacity
         },
         resources,
-        status: shelterStatus
+        status: shelterStatus,
+        urgentNeeds: urgentNeeds.trim() ? urgentNeeds.split(',').map(need => need.trim()).filter(need => need) : []
       };
 
       // Use the async thunk for updating
@@ -324,7 +384,16 @@ export default function StatusUpdateScreen() {
 
       {/* Resources Section */}
       <View style={styles.sectionCard}>
-        <Text style={styles.sectionTitle}>Resource Status</Text>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Resource Status</Text>
+          <TouchableOpacity 
+            style={styles.bulkUpdateButton}
+            onPress={() => setShowBulkUpdateModal(true)}
+          >
+            <MaterialIcons name="update" size={16} color="#3b82f6" />
+            <Text style={styles.bulkUpdateText}>Bulk Update</Text>
+          </TouchableOpacity>
+        </View>
         <View style={styles.resourcesGrid}>
           {Object.entries(resources).map(([resourceType, status]) => (
             <TouchableOpacity
@@ -346,6 +415,25 @@ export default function StatusUpdateScreen() {
             </TouchableOpacity>
           ))}
         </View>
+      </View>
+
+      {/* Urgent Needs Section */}
+      <View style={styles.sectionCard}>
+        <Text style={styles.sectionTitle}>Urgent Needs & Special Requests</Text>
+        <TextInput
+          style={styles.urgentNeedsInput}
+          placeholder="Enter urgent needs (e.g., medical supplies, generators, blankets)"
+          placeholderTextColor="#9ca3af"
+          value={urgentNeeds}
+          onChangeText={handleUrgentNeedsChange}
+          multiline
+          numberOfLines={3}
+          maxLength={280}
+        />
+        <Text style={styles.characterCount}>{urgentNeeds.length}/280</Text>
+        <Text style={styles.urgentNeedsHint}>
+          💡 Separate multiple items with commas. This helps responders prioritize assistance.
+        </Text>
       </View>
 
       {/* Update Button */}
@@ -374,6 +462,57 @@ export default function StatusUpdateScreen() {
           <Text style={styles.saveIndicatorText}>You have unsaved changes</Text>
         </View>
       )}
+
+      {/* Bulk Update Modal */}
+      <Modal
+        visible={showBulkUpdateModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowBulkUpdateModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Bulk Resource Update</Text>
+            <Text style={styles.modalSubtitle}>
+              Set all resources to the same status level
+            </Text>
+            
+            <View style={styles.bulkStatusGrid}>
+              {Object.values(ResourceStatus).map((status) => (
+                <TouchableOpacity
+                  key={status}
+                  style={[
+                    styles.bulkStatusButton,
+                    { backgroundColor: getResourceColor(status) },
+                    bulkResourceStatus === status && styles.bulkStatusButtonActive
+                  ]}
+                  onPress={() => setBulkResourceStatus(status)}
+                >
+                  <Text style={styles.bulkStatusText}>
+                    {getResourceStatusLabel(status)}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <View style={styles.modalButtons}>
+              <TouchableOpacity
+                style={styles.modalCancelButton}
+                onPress={() => setShowBulkUpdateModal(false)}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity
+                style={styles.modalConfirmButton}
+                onPress={handleBulkResourceUpdate}
+              >
+                <Text style={styles.modalConfirmText}>Update All</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -691,5 +830,129 @@ const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 16,
     fontWeight: '600',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  bulkUpdateButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f9ff',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#3b82f6',
+  },
+  bulkUpdateText: {
+    color: '#3b82f6',
+    fontSize: 12,
+    fontWeight: '600',
+    marginLeft: 4,
+  },
+  urgentNeedsInput: {
+    backgroundColor: '#f9fafb',
+    borderWidth: 1,
+    borderColor: '#d1d5db',
+    borderRadius: 8,
+    padding: 12,
+    fontSize: 16,
+    color: '#111827',
+    textAlignVertical: 'top',
+    marginBottom: 8,
+  },
+  characterCount: {
+    fontSize: 12,
+    color: '#6b7280',
+    textAlign: 'right',
+    marginBottom: 8,
+  },
+  urgentNeedsHint: {
+    fontSize: 12,
+    color: '#6b7280',
+    fontStyle: 'italic',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    backgroundColor: '#ffffff',
+    margin: 20,
+    padding: 20,
+    borderRadius: 12,
+    width: '90%',
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#111827',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  modalSubtitle: {
+    fontSize: 14,
+    color: '#6b7280',
+    marginBottom: 20,
+    textAlign: 'center',
+  },
+  bulkStatusGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 20,
+  },
+  bulkStatusButton: {
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+    width: '48%',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: 'transparent',
+  },
+  bulkStatusButtonActive: {
+    borderColor: '#111827',
+  },
+  bulkStatusText: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  modalButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  modalCancelButton: {
+    flex: 1,
+    backgroundColor: '#f3f4f6',
+    padding: 12,
+    borderRadius: 8,
+    marginRight: 8,
+  },
+  modalCancelText: {
+    color: '#374151',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  modalConfirmButton: {
+    flex: 1,
+    backgroundColor: '#3b82f6',
+    padding: 12,
+    borderRadius: 8,
+    marginLeft: 8,
+  },
+  modalConfirmText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });

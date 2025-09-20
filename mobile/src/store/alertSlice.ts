@@ -1,121 +1,119 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction, createAsyncThunk } from '@reduxjs/toolkit';
+import { Alert, AlertType, AlertPriority, AlertStatus } from '../types';
+import { alertService, CreateAlertRequest } from '../services/alertService';
 
-export interface Alert {
-  id: string;
-  type: 'emergency' | 'warning' | 'info' | 'shelter_update';
-  priority: 'low' | 'medium' | 'high' | 'critical';
-  title: string;
-  message: string;
-  timestamp: number;
-  senderId: string;
-  senderRole: string;
-  shelterId?: string;
-  acknowledged: boolean;
-  actionRequired: boolean;
-  expiresAt?: number;
-}
+// Async thunks
+export const createAlertAsync = createAsyncThunk(
+  'alerts/createAlert',
+  async (alertData: CreateAlertRequest, { rejectWithValue }) => {
+    try {
+      return await alertService.createAlert(alertData);
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const fetchAlertsAsync = createAsyncThunk(
+  'alerts/fetchAlerts',
+  async (shelterId: string, { rejectWithValue }) => {
+    try {
+      return await alertService.getAlerts(shelterId);
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
+
+export const acknowledgeAlertAsync = createAsyncThunk(
+  'alerts/acknowledgeAlert',
+  async (alertId: string, { rejectWithValue }) => {
+    try {
+      await alertService.acknowledgeAlert(alertId);
+      return alertId;
+    } catch (error: any) {
+      return rejectWithValue(error.message);
+    }
+  }
+);
 
 export interface AlertFilter {
-  priority?: Alert['priority'];
-  type?: Alert['type'];
-  acknowledged?: boolean;
+  priority?: AlertPriority;
+  type?: AlertType;
+  status?: string;
 }
 
 export interface AlertState {
   alerts: Alert[];
-  unreadCount: number;
-  filter: AlertFilter;
   isLoading: boolean;
   error: string | null;
+  filter: AlertFilter;
 }
 
 const initialState: AlertState = {
   alerts: [],
-  unreadCount: 0,
-  filter: {},
   isLoading: false,
-  error: null
+  error: null,
+  filter: {}
 };
 
 const alertSlice = createSlice({
-  name: 'alert',
+  name: 'alerts',
   initialState,
   reducers: {
-    addAlert: (state, action: PayloadAction<Omit<Alert, 'acknowledged' | 'timestamp'>>) => {
-      const alert: Alert = {
-        ...action.payload,
-        acknowledged: false,
-        timestamp: Date.now()
-      };
-      state.alerts.unshift(alert);
-      state.unreadCount += 1;
-    },
-    acknowledgeAlert: (state, action: PayloadAction<string>) => {
-      const alert = state.alerts.find(alert => alert.id === action.payload);
-      if (alert && !alert.acknowledged) {
-        alert.acknowledged = true;
-        state.unreadCount = Math.max(0, state.unreadCount - 1);
-      }
-    },
-    acknowledgeAllAlerts: (state) => {
-      state.alerts.forEach(alert => {
-        alert.acknowledged = true;
-      });
-      state.unreadCount = 0;
-    },
-    removeAlert: (state, action: PayloadAction<string>) => {
-      const alertIndex = state.alerts.findIndex(alert => alert.id === action.payload);
-      if (alertIndex !== -1) {
-        const alert = state.alerts[alertIndex];
-        if (!alert.acknowledged) {
-          state.unreadCount = Math.max(0, state.unreadCount - 1);
-        }
-        state.alerts.splice(alertIndex, 1);
-      }
-    },
-    clearAllAlerts: (state) => {
-      state.alerts = [];
-      state.unreadCount = 0;
-    },
     setAlertFilter: (state, action: PayloadAction<AlertFilter>) => {
       state.filter = action.payload;
     },
     clearAlertFilter: (state) => {
       state.filter = {};
     },
-    setLoading: (state, action: PayloadAction<boolean>) => {
-      state.isLoading = action.payload;
-    },
-    setError: (state, action: PayloadAction<string | null>) => {
-      state.error = action.payload;
-    },
-    removeExpiredAlerts: (state) => {
-      const now = Date.now();
-      const beforeCount = state.alerts.length;
-      state.alerts = state.alerts.filter(alert => {
-        if (alert.expiresAt && alert.expiresAt < now) {
-          if (!alert.acknowledged) {
-            state.unreadCount = Math.max(0, state.unreadCount - 1);
-          }
-          return false;
-        }
-        return true;
-      });
+    clearError: (state) => {
+      state.error = null;
     }
+  },
+  extraReducers: (builder) => {
+    builder
+      // Create alert
+      .addCase(createAlertAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(createAlertAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.alerts.unshift(action.payload);
+      })
+      .addCase(createAlertAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Fetch alerts
+      .addCase(fetchAlertsAsync.pending, (state) => {
+        state.isLoading = true;
+        state.error = null;
+      })
+      .addCase(fetchAlertsAsync.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.alerts = action.payload;
+      })
+      .addCase(fetchAlertsAsync.rejected, (state, action) => {
+        state.isLoading = false;
+        state.error = action.payload as string;
+      })
+      // Acknowledge alert
+      .addCase(acknowledgeAlertAsync.fulfilled, (state, action) => {
+        const alert = state.alerts.find(a => a.alertId === action.payload);
+        if (alert) {
+          alert.status = AlertStatus.ACKNOWLEDGED;
+          alert.acknowledgedAt = new Date().toISOString();
+        }
+      });
   }
 });
 
 export const {
-  addAlert,
-  acknowledgeAlert,
-  acknowledgeAllAlerts,
-  removeAlert,
-  clearAllAlerts,
   setAlertFilter,
   clearAlertFilter,
-  setLoading,
-  setError,
-  removeExpiredAlerts
+  clearError
 } = alertSlice.actions;
 
 export default alertSlice.reducer;
