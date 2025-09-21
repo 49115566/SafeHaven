@@ -114,7 +114,7 @@ export class ErrorHandler {
       if (error.message.includes('fetch') || 
           error.message.includes('NetworkError') ||
           error.message.includes('Failed to fetch') ||
-          error.name === 'TypeError' && error.message.includes('fetch')) {
+          (error.name === 'TypeError' && error.message.includes('fetch'))) {
         return new NetworkError(error.message);
       }
 

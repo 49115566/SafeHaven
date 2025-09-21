@@ -21,6 +21,7 @@ export default function App() {
   return (
     <ErrorBoundary>
       <Provider store={store}>
+        {/* @ts-ignore */}
         <PersistGate loading={<LoadingScreen />} persistor={persistor}>
           <NavigationContainer>
             <StatusBar style="light" backgroundColor="#1f2937" />

@@ -70,6 +70,6 @@
   "author": "Team SaveHaven",
   "license": "MIT",
   "dependencies": {
-    "react-native": "^0.81.4"
+    "safehaven-shared": "file:./shared"
   }
 }

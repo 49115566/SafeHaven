@@ -1,48 +1,5 @@
 import React from 'react';
-
-// Type definitions
-type Alert = {
-  alertId: string;
-  shelterId: string;
-  type: string;
-  priority: string;
-  title: string;
-  description: string;
-  status: string;
-  createdBy: string;
-  acknowledgedBy?: string;
-  acknowledgedAt?: string;
-  resolvedAt?: string;
-  timestamp: number;
-  createdAt: string;
-};
-
-type AlertPriority = 'critical' | 'high' | 'medium' | 'low';
-type AlertStatus = 'open' | 'acknowledged' | 'in_progress' | 'resolved';
-type AlertType = 'medical_emergency' | 'security_issue' | 'resource_critical' | 'infrastructure_problem' | 'capacity_full' | 'general_assistance';
-
-const AlertPriority = {
-  CRITICAL: 'critical' as const,
-  HIGH: 'high' as const,
-  MEDIUM: 'medium' as const,
-  LOW: 'low' as const
-};
-
-const AlertStatus = {
-  OPEN: 'open' as const,
-  ACKNOWLEDGED: 'acknowledged' as const,
-  IN_PROGRESS: 'in_progress' as const,
-  RESOLVED: 'resolved' as const
-};
-
-const AlertType = {
-  MEDICAL_EMERGENCY: 'medical_emergency' as const,
-  SECURITY_ISSUE: 'security_issue' as const,
-  RESOURCE_CRITICAL: 'resource_critical' as const,
-  INFRASTRUCTURE_PROBLEM: 'infrastructure_problem' as const,
-  CAPACITY_FULL: 'capacity_full' as const,
-  GENERAL_ASSISTANCE: 'general_assistance' as const
-};
+import { Alert, AlertPriority, AlertStatus, AlertType } from 'safehaven-shared';
 
 interface AlertDetailsModalProps {
   alert: Alert;

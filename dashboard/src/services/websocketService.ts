@@ -17,8 +17,8 @@ export class WebSocketService {
   private url: string;
   private token: string | null = null;
   private callbacks: WebSocketServiceCallbacks | null = null;
-  private reconnectTimer: number | null = null;
-  private heartbeatTimer: number | null = null;
+  private reconnectTimer: NodeJS.Timeout | null = null;
+  private heartbeatTimer: NodeJS.Timeout | null = null;
   private connectionState: WebSocketConnectionState = {
     status: 'disconnected',
     reconnectAttempts: 0
@@ -87,6 +87,17 @@ export class WebSocketService {
   private createConnection(): void {
     if (!this.token || !this.callbacks) {
       console.error('Token and callbacks are required for WebSocket connection');
+      return;
+    }
+
+    // Skip WebSocket connection for mock tokens
+    if (this.token.startsWith('mock-jwt-token-')) {
+      console.log('Mock token detected, skipping WebSocket connection');
+      this.updateConnectionState({
+        status: 'disconnected',
+        reconnectAttempts: 0,
+        lastError: 'WebSocket disabled for demo mode'
+      });
       return;
     }
 

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Shelter, ShelterStatus, AlertStatus, Alert } from 'safehaven-shared';
 import AwsLocationMap from '../components/AwsLocationMap';
 import ConnectionStatusIndicator from '../components/ConnectionStatusIndicator';
@@ -8,6 +9,7 @@ import { useShelters, useActiveAlerts, useShelterStats, useConnectionStatus, use
 import { useAuth } from '../hooks/useAuth';
 
 export default function DashboardPage() {
+  const navigate = useNavigate();
   const { user, logout } = useAuth();
   const { state, refreshData, acknowledgeAlert } = useRealtimeData();
   const shelters = useShelters();
@@ -111,20 +113,36 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div style={{
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+    }}>
       <ConnectionStatusIndicator />
       
       {/* Header */}
-      <header className="bg-white shadow-sm border-b">
+      <header style={{
+        background: 'linear-gradient(45deg, #ff6b6b, #ee5a24)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.1)'
+      }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-20">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold text-gray-900">
+              <h1 style={{
+                fontSize: '28px',
+                fontWeight: 'bold',
+                color: 'white',
+                margin: '0'
+              }}>
                 SafeHaven Dashboard
               </h1>
-              <div className="ml-4 flex items-center">
-                <div className={`w-3 h-3 rounded-full ${getConnectionStatusColor()}`}></div>
-                <span className="ml-2 text-sm text-gray-600">
+              <div className="ml-6 flex items-center">
+                <div className={`w-4 h-4 rounded-full ${getConnectionStatusColor()}`}></div>
+                <span style={{
+                  marginLeft: '8px',
+                  fontSize: '14px',
+                  color: 'rgba(255,255,255,0.9)',
+                  fontWeight: '500'
+                }}>
                   {getConnectionStatusText()}
                 </span>
               </div>
@@ -133,13 +151,26 @@ export default function DashboardPage() {
             <div className="flex items-center space-x-4">
               <button
                 onClick={refreshData}
-                className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900"
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  color: 'white',
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: '500'
+                }}
               >
-                Refresh
+                🔄 Refresh
               </button>
               
-              <div className="text-sm text-gray-600">
-                Welcome, {user?.profile.firstName} {user?.profile.lastName}
+              <div style={{
+                fontSize: '14px',
+                color: 'rgba(255,255,255,0.9)',
+                fontWeight: '500'
+              }}>
+                👋 Welcome, {user?.profile.firstName} {user?.profile.lastName}
                 <span className="ml-2 px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs">
                   {user?.role.replace('_', ' ').toUpperCase()}
                 </span>
@@ -147,9 +178,18 @@ export default function DashboardPage() {
               
               <button
                 onClick={logout}
-                className="px-3 py-2 text-sm text-gray-600 hover:text-gray-900"
+                style={{
+                  padding: '8px 16px',
+                  fontSize: '14px',
+                  color: 'white',
+                  backgroundColor: 'rgba(255,255,255,0.2)',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: '500'
+                }}
               >
-                Logout
+                🚪 Logout
               </button>
             </div>
           </div>
@@ -161,9 +201,19 @@ export default function DashboardPage() {
           
           {/* Main Map Section */}
           <div className="lg:col-span-3 space-y-6">
-            <div className="bg-white rounded-lg shadow p-6">
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+              padding: '24px'
+            }}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">Live Shelter Map</h2>
+                <h2 style={{
+                  fontSize: '24px',
+                  fontWeight: '600',
+                  color: '#2c3e50',
+                  margin: '0'
+                }}>🗺️ Live Shelter Map</h2>
                 <div className="text-sm text-gray-500">
                   {state.lastUpdated && (
                     <>Last updated: {state.lastUpdated.toLocaleTimeString()}</>
@@ -178,8 +228,18 @@ export default function DashboardPage() {
             </div>
 
             {/* Shelter List */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold mb-4">Shelter Status</h2>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+              padding: '24px'
+            }}>
+              <h2 style={{
+                fontSize: '24px',
+                fontWeight: '600',
+                color: '#2c3e50',
+                margin: '0 0 16px 0'
+              }}>📊 Shelter Status</h2>
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -214,7 +274,7 @@ export default function DashboardPage() {
                         <tr 
                           key={shelter.shelterId} 
                           className="hover:bg-gray-50 cursor-pointer"
-                          onClick={() => setSelectedShelter(shelter)}
+                          onClick={() => navigate(`/shelter/${shelter.shelterId}`)}
                         >
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                             {shelter.name}
@@ -249,8 +309,18 @@ export default function DashboardPage() {
           <div className="space-y-6">
             
             {/* Quick Stats */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold mb-4">Quick Stats</h2>
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+              padding: '24px'
+            }}>
+              <h2 style={{
+                fontSize: '20px',
+                fontWeight: '600',
+                color: '#2c3e50',
+                margin: '0 0 16px 0'
+              }}>📈 Quick Stats</h2>
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-gray-600">Total Shelters:</span>
@@ -298,9 +368,19 @@ export default function DashboardPage() {
             </div>
 
             {/* Active Alerts Summary */}
-            <div className="bg-white rounded-lg shadow p-6">
+            <div style={{
+              backgroundColor: 'white',
+              borderRadius: '16px',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+              padding: '24px'
+            }}>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-xl font-semibold">Active Alerts</h2>
+                <h2 style={{
+                  fontSize: '20px',
+                  fontWeight: '600',
+                  color: '#2c3e50',
+                  margin: '0'
+                }}>🚨 Active Alerts</h2>
                 <button
                   onClick={() => setShowAlertPanel(!showAlertPanel)}
                   className="text-sm text-blue-600 hover:text-blue-800 font-medium"
@@ -374,9 +454,19 @@ export default function DashboardPage() {
 
             {/* Selected Shelter Details */}
             {selectedShelter && (
-              <div className="bg-white rounded-lg shadow p-6">
+              <div style={{
+                backgroundColor: 'white',
+                borderRadius: '16px',
+                boxShadow: '0 10px 30px rgba(0,0,0,0.1)',
+                padding: '24px'
+              }}>
                 <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-xl font-semibold">Shelter Details</h2>
+                  <h2 style={{
+                    fontSize: '20px',
+                    fontWeight: '600',
+                    color: '#2c3e50',
+                    margin: '0'
+                  }}>🏠 Shelter Details</h2>
                   <button
                     onClick={() => setSelectedShelter(null)}
                     className="text-gray-500 hover:text-gray-700"

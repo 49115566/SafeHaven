@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { SafeHavenError, useErrorHandler } from '../utils/errorHandler';
 
 interface ErrorNotificationProps {
@@ -17,6 +17,11 @@ export const ErrorNotification: React.FC<ErrorNotificationProps> = ({
   const [isVisible, setIsVisible] = useState(true);
   const { getUserFriendlyMessage } = useErrorHandler();
 
+  const handleDismiss = useCallback(() => {
+    setIsVisible(false);
+    setTimeout(onDismiss, 300); // Allow fade out animation
+  }, [onDismiss]);
+
   useEffect(() => {
     if (autoHide && error.code !== 'CRITICAL_ERROR') {
       const timer = setTimeout(() => {
@@ -25,12 +30,7 @@ export const ErrorNotification: React.FC<ErrorNotificationProps> = ({
 
       return () => clearTimeout(timer);
     }
-  }, [autoHide, autoHideDelay, error.code]);
-
-  const handleDismiss = () => {
-    setIsVisible(false);
-    setTimeout(onDismiss, 300); // Allow fade out animation
-  };
+  }, [autoHide, autoHideDelay, error.code, handleDismiss]);
 
   const getNotificationStyle = () => {
     const baseStyle = 'fixed top-4 right-4 max-w-md p-4 rounded-lg shadow-lg z-50 transition-all duration-300';

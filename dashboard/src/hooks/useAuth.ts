@@ -21,35 +21,32 @@ export function useAuth() {
 
   // Initialize auth state from localStorage
   useEffect(() => {
-    const initializeAuth = async () => {
+    const initializeAuth = () => {
       try {
         const storedToken = localStorage.getItem(TOKEN_STORAGE_KEY);
         
-        if (storedToken) {
-          const apiService = getApiService();
-          apiService.setToken(storedToken);
+        if (storedToken && storedToken.startsWith('mock-jwt-token-')) {
+          // Mock user for demo
+          const mockUser = {
+            userId: 'user-001',
+            email: 'responder@safehaven.com',
+            role: 'first_responder' as any,
+            profile: {
+              firstName: 'John',
+              lastName: 'Doe',
+              organization: 'Dallas Fire Department',
+              phone: '(214) 555-0100'
+            },
+            isActive: true,
+            createdAt: new Date().toISOString()
+          };
           
-          // Verify token is still valid
-          const user = await apiService.verifyToken();
-          
-          if (user) {
-            setAuthState({
-              user,
-              token: storedToken,
-              isAuthenticated: true,
-              isLoading: false
-            });
-          } else {
-            // Token is invalid, clear it
-            localStorage.removeItem(TOKEN_STORAGE_KEY);
-            apiService.clearToken();
-            setAuthState({
-              user: null,
-              token: null,
-              isAuthenticated: false,
-              isLoading: false
-            });
-          }
+          setAuthState({
+            user: mockUser,
+            token: storedToken,
+            isAuthenticated: true,
+            isLoading: false
+          });
         } else {
           setAuthState({
             user: null,
@@ -75,15 +72,28 @@ export function useAuth() {
 
   const login = async (email: string, password: string): Promise<boolean> => {
     try {
-      const apiService = getApiService();
-      const authResponse = await apiService.login(email, password);
-      
-      if (authResponse?.token && authResponse?.user) {
-        localStorage.setItem(TOKEN_STORAGE_KEY, authResponse.token);
+      // Mock authentication - check demo credentials
+      if (email === 'responder@safehaven.com' && password === 'password123') {
+        const mockToken = 'mock-jwt-token-' + Date.now();
+        const mockUser = {
+          userId: 'user-001',
+          email: 'responder@safehaven.com',
+          role: 'first_responder' as any,
+          profile: {
+            firstName: 'John',
+            lastName: 'Doe',
+            organization: 'Dallas Fire Department',
+            phone: '(214) 555-0100'
+          },
+          isActive: true,
+          createdAt: new Date().toISOString()
+        };
+        
+        localStorage.setItem(TOKEN_STORAGE_KEY, mockToken);
         
         setAuthState({
-          user: authResponse.user,
-          token: authResponse.token,
+          user: mockUser,
+          token: mockToken,
           isAuthenticated: true,
           isLoading: false
         });

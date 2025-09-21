@@ -1,38 +1,5 @@
 import React, { useState, useEffect } from 'react';
-
-// Type definitions
-type Alert = {
-  alertId: string;
-  shelterId: string;
-  type: string;
-  priority: string;
-  title: string;
-  description: string;
-  status: string;
-  createdBy: string;
-  acknowledgedBy?: string;
-  acknowledgedAt?: string;
-  resolvedAt?: string;
-  timestamp: number;
-  createdAt: string;
-};
-
-type AlertPriority = 'critical' | 'high' | 'medium' | 'low';
-type AlertStatus = 'open' | 'acknowledged' | 'in_progress' | 'resolved';
-
-const AlertPriority = {
-  CRITICAL: 'critical' as const,
-  HIGH: 'high' as const,
-  MEDIUM: 'medium' as const,
-  LOW: 'low' as const
-};
-
-const AlertStatus = {
-  OPEN: 'open' as const,
-  ACKNOWLEDGED: 'acknowledged' as const,
-  IN_PROGRESS: 'in_progress' as const,
-  RESOLVED: 'resolved' as const
-};
+import { Alert, AlertPriority, AlertStatus } from 'safehaven-shared';
 
 interface AlertNotificationProps {
   alert: Alert;
