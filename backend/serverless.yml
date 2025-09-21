@@ -342,6 +342,7 @@ resources:
         KeySchema:
           - AttributeName: shelterId
             KeyType: HASH
+        BillingMode: ON_DEMAND
         GlobalSecondaryIndexes:
           - IndexName: StatusIndex
             KeySchema:
@@ -349,12 +350,6 @@ resources:
                 KeyType: HASH
             Projection:
               ProjectionType: ALL
-            ProvisionedThroughput:
-              ReadCapacityUnits: 5
-              WriteCapacityUnits: 5
-        ProvisionedThroughput:
-          ReadCapacityUnits: 5
-          WriteCapacityUnits: 5
 
     UsersTable:
       Type: AWS::DynamoDB::Table
@@ -368,6 +363,7 @@ resources:
         KeySchema:
           - AttributeName: userId
             KeyType: HASH
+        BillingMode: ON_DEMAND
         GlobalSecondaryIndexes:
           - IndexName: EmailIndex
             KeySchema:
@@ -375,12 +371,6 @@ resources:
                 KeyType: HASH
             Projection:
               ProjectionType: ALL
-            ProvisionedThroughput:
-              ReadCapacityUnits: 5
-              WriteCapacityUnits: 5
-        ProvisionedThroughput:
-          ReadCapacityUnits: 5
-          WriteCapacityUnits: 5
 
     AlertsTable:
       Type: AWS::DynamoDB::Table
@@ -396,6 +386,7 @@ resources:
         KeySchema:
           - AttributeName: alertId
             KeyType: HASH
+        BillingMode: ON_DEMAND
         GlobalSecondaryIndexes:
           - IndexName: shelterId-timestamp-index
             KeySchema:
@@ -405,12 +396,6 @@ resources:
                 KeyType: RANGE
             Projection:
               ProjectionType: ALL
-            ProvisionedThroughput:
-              ReadCapacityUnits: 5
-              WriteCapacityUnits: 5
-        ProvisionedThroughput:
-          ReadCapacityUnits: 5
-          WriteCapacityUnits: 5
 
     ConnectionsTable:
       Type: AWS::DynamoDB::Table
@@ -424,6 +409,7 @@ resources:
         KeySchema:
           - AttributeName: connectionId
             KeyType: HASH
+        BillingMode: ON_DEMAND
         GlobalSecondaryIndexes:
           - IndexName: UserIndex
             KeySchema:
@@ -431,12 +417,6 @@ resources:
                 KeyType: HASH
             Projection:
               ProjectionType: ALL
-            ProvisionedThroughput:
-              ReadCapacityUnits: 5
-              WriteCapacityUnits: 5
-        ProvisionedThroughput:
-          ReadCapacityUnits: 5
-          WriteCapacityUnits: 5
         TimeToLiveSpecification:
           AttributeName: ttl
           Enabled: true

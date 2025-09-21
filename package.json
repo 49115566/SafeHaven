@@ -38,6 +38,7 @@
     "clean:dashboard": "cd dashboard && npm run clean"
   },
   "devDependencies": {
+    "@react-native-community/cli": "^20.0.2",
     "concurrently": "^8.2.2",
     "typescript": "^5.9.2"
   },
