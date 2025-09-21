@@ -1,5 +1,4 @@
 # SafeHaven Connect
-
 [![AWS](https://img.shields.io/badge/AWS-Serverless-orange.svg)](https://aws.amazon.com/)
 [![FirstNet](https://img.shields.io/badge/FirstNet-Compatible-blue.svg)](https://www.firstnet.com/)
 [![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
@@ -7,6 +6,7 @@
 > **🏆 Breaking Barriers Hackathon 2025 Entry**  
 > *Transforming emergency response through AI-powered communication platforms*
 
+![image](SafeHavenLogo.png)
 ## 🚨 Overview
 
 **SafeHaven Connect** is a real-time communication platform that bridges the critical gap between emergency shelters and first responders during disasters. Built for the FirstNet public safety network, our solution ensures reliable, priority communication when lives are on the line.
