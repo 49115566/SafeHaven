@@ -98,10 +98,27 @@ SafeHaven Connect is a new, standalone system that integrates with:
 - **Network**: FirstNet-compatible devices and infrastructure
 
 #### 2.4.2 Software Platforms
-- **Frontend**: React Native (mobile), React (web)
-- **Backend**: AWS Lambda, API Gateway
-- **Database**: Amazon DynamoDB
-- **Messaging**: Amazon SNS/SQS
+
+**Frontend Technologies:**
+- **Mobile**: React Native 0.72.6 with Expo 49.0.0
+- **Dashboard**: React 18.2.0 with TypeScript 5.x
+- **State Management**: Redux Toolkit (mobile), React Context (dashboard)
+- **Maps**: MapLibre GL JS and MapLibre React Native
+
+**Backend Infrastructure:**
+- **Runtime**: AWS Lambda with Node.js 18.x
+- **API Layer**: AWS API Gateway (REST + WebSocket)
+- **Database**: Amazon DynamoDB with Global Secondary Indexes
+- **Messaging**: Amazon SNS/SQS for pub/sub architecture
+- **AI Services**: AWS Bedrock (Amazon Nova Micro model)
+- **Location**: AWS Location Service with Esri data sources
+- **Deployment**: Serverless Framework 3.x with CloudFormation
+
+**Development Tools:**
+- **Build Tools**: Webpack 5.x (backend), Create React App (dashboard), Expo CLI (mobile)
+- **Testing**: Jest with React Testing Library
+- **Code Quality**: ESLint, Prettier, TypeScript 5.x
+- **Version Control**: Git with GitHub Actions (CI/CD)
 
 ### 2.5 Design and Implementation Constraints
 
@@ -367,7 +384,7 @@ SafeHaven Connect is a new, standalone system that integrates with:
 
 ### 5.1 System Architecture Overview
 
-SafeHaven Connect follows a serverless microservices architecture pattern to ensure scalability, reliability, and cost-effectiveness during the hackathon demonstration.
+SafeHaven Connect implements a serverless microservices architecture built on AWS, optimized for scalability, cost-effectiveness, and rapid development during the hackathon.
 
 ```
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -377,9 +394,9 @@ SafeHaven Connect follows a serverless microservices architecture pattern to ens
           ┌───────────────┼───────────────┐
           │               │               │
     ┌─────────────┐  ┌─────────┐  ┌─────────────┐
-    │   Shelter   │  │FirstNet │  │  Responder  │
-    │ Command App │  │  Edge   │  │  Dashboard  │
-    │  (Mobile)   │  │ Services│  │    (Web)    │
+    │   Mobile    │  │FirstNet │  │  Dashboard  │
+    │    App      │  │  Edge   │  │    Web      │
+    │ (RN + Expo) │  │ Services│  │(React + TS) │
     └─────────────┘  └─────────┘  └─────────────┘
           │               │               │
           └───────────────┼───────────────┘
@@ -395,103 +412,140 @@ SafeHaven Connect follows a serverless microservices architecture pattern to ens
               │   Functions      │
               │ ┌──────────────┐ │
               │ │ Auth Service │ │
-              │ │Status Service│ │
+              │ │Shelter Mgmt  │ │
               │ │Alert Service │ │
-              │ │Data Service  │ │
+              │ │WebSocket Hdl │ │
+              │ │Location Svc  │ │
+              │ │AI Predictions│ │
               │ └──────────────┘ │
               └──────────────────┘
                           │
-    ┌──────────────┬──────┴──────┬──────────────┐
-    │              │             │              │
-┌─────────┐ ┌─────────────┐ ┌─────────┐ ┌─────────────┐
-│DynamoDB │ │   Amazon    │ │Amazon   │ │  CloudWatch │
-│Shelter  │ │     SNS     │ │  SQS    │ │   Logs &    │
-│ Tables  │ │(Pub/Sub Hub)│ │(Queues) │ │ Monitoring  │
-└─────────┘ └─────────────┘ └─────────┘ └─────────────┘
+    ┌──────────────┬──────┴──────┬──────────────┬──────────────┐
+    │              │             │              │              │
+┌─────────┐ ┌─────────────┐ ┌─────────┐ ┌─────────────┐ ┌─────────────┐
+│DynamoDB │ │   Amazon    │ │Amazon   │ │AWS Location │ │AWS Bedrock  │
+│ Tables  │ │     SNS     │ │  SQS    │ │   Service   │ │   (Nova)    │
+│         │ │(Pub/Sub Hub)│ │(Queues) │ │   (Maps)    │ │     AI      │
+└─────────┘ └─────────────┘ └─────────┘ └─────────────┘ └─────────────┘
 ```
 
 ### 5.2 Component Specifications
 
 #### 5.2.1 API Gateway Configuration
 
-**Endpoints:**
+**REST API Endpoints:**
 ```
-POST   /api/auth/shelter-login
-POST   /api/auth/responder-login
-GET    /api/shelters
-POST   /api/shelters
-PUT    /api/shelters/{id}/status
-POST   /api/shelters/{id}/alerts
-GET    /api/dashboard/live-data
-WSS    /api/realtime/updates
+Authentication:
+POST   /auth/login           # Shelter/responder authentication
+POST   /auth/register        # New shelter registration
+GET    /auth/verify          # Token verification
+
+Shelter Management:
+GET    /shelters             # List all active shelters
+POST   /shelters             # Create new shelter
+GET    /shelters/{id}        # Get shelter details
+PUT    /shelters/{id}/status # Update shelter status
+
+Alert System:
+POST   /alerts               # Create emergency alert
+GET    /alerts               # List active alerts
+PUT    /alerts/{id}/acknowledge  # Acknowledge alert
+PUT    /alerts/{id}/resolve     # Resolve alert
+
+Location Services:
+POST   /location/search      # AWS Location Service place search
+GET    /location/mapstyle    # Get map style configuration
+
+AI Services:
+POST   /ai/predict-resources # AWS Bedrock resource predictions
 ```
 
-**Security:**
-- API Key authentication for external access
-- JWT token validation for user sessions
-- Rate limiting: 100 requests/minute per user
-- CORS configuration for web dashboard
+**WebSocket API:**
+```
+Connection Management:
+$connect                     # WebSocket connection
+$disconnect                  # WebSocket disconnection
+$default                     # Default message handler
+
+Real-time Events:
+shelter.status.updated       # Shelter status change
+shelter.alert.created        # New emergency alert
+alert.acknowledged          # Alert acknowledgment
+dashboard.refresh           # Force dashboard refresh
+```
+
+**Security Configuration:**
+- JWT token-based authentication for all protected endpoints
+- Custom authorizer Lambda function for token validation
+- CORS enabled for web dashboard integration
+- Rate limiting: 100 requests/minute per authenticated user
+- API Gateway throttling and burst limits configured
 
 #### 5.2.2 Lambda Functions Architecture
 
-**Function: shelter-auth-service**
-- **Runtime:** Node.js 18.x
-- **Memory:** 256 MB
-- **Timeout:** 30 seconds
-- **Purpose:** Handle shelter registration and authentication
+**Authentication Functions:**
+- **authLogin**: Handle user authentication with JWT token generation
+- **authRegister**: New shelter registration with validation
+- **authVerifyToken**: Token validation for API access
+- **authVerify**: Custom authorizer for API Gateway
 
-**Function: status-update-service**
-- **Runtime:** Node.js 18.x
-- **Memory:** 512 MB
-- **Timeout:** 30 seconds
-- **Purpose:** Process shelter status updates and trigger notifications
+**Shelter Management Functions:**
+- **createShelter**: Register new shelter with location validation
+- **getShelters**: List all shelters with filtering capabilities
+- **getShelter**: Retrieve specific shelter details
+- **updateShelterStatus**: Real-time status updates with SNS publishing
 
-**Function: alert-management-service**
-- **Runtime:** Node.js 18.x
-- **Memory:** 256 MB
-- **Timeout:** 30 seconds
-- **Purpose:** Handle emergency alerts and critical notifications
+**Alert System Functions:**
+- **createAlert**: Emergency alert creation with priority routing
+- **getAlerts**: Retrieve active alerts with filtering
+- **acknowledgeAlert**: Alert acknowledgment by responders
+- **resolveAlert**: Alert resolution and cleanup
 
-**Function: dashboard-data-service**
-- **Runtime:** Node.js 18.x
-- **Memory:** 512 MB
-- **Timeout:** 30 seconds
-- **Purpose:** Aggregate and serve dashboard data
+**Real-time Communication:**
+- **websocketConnect**: WebSocket connection management
+- **websocketDisconnect**: Connection cleanup and tracking
+- **websocketDefault**: Message routing and broadcasting
+
+**Location Services:**
+- **searchPlaces**: AWS Location Service integration for place search
+- **getMapStyle**: Map style configuration and tiles
+
+**AI Prediction Services:**
+- **predictResources**: AWS Bedrock integration for resource forecasting
+
+**Function Specifications:**
+```yaml
+Runtime: nodejs18.x
+Architecture: x86_64
+Memory: 256-512MB (varies by function)
+Timeout: 30-60 seconds
+Environment Variables:
+  - SHELTERS_TABLE
+  - USERS_TABLE
+  - ALERTS_TABLE
+  - CONNECTIONS_TABLE
+  - AWS_LOCATION_MAP_NAME
+  - JWT_SECRET
+```
 
 #### 5.2.3 Database Schema Design
 
-**DynamoDB Tables:**
+**DynamoDB Tables Configuration:**
 
-**Table: SafeHaven-Shelters**
-```json
-{
-  "TableName": "SafeHaven-Shelters",
-  "KeySchema": [
-    {
-      "AttributeName": "shelterId",
-      "KeyType": "HASH"
-    }
-  ],
-  "AttributeDefinitions": [
-    {
-      "AttributeName": "shelterId",
-      "AttributeType": "S"
-    },
-    {
-      "AttributeName": "location-index",
-      "AttributeType": "S"
-    }
-  ],
-  "GlobalSecondaryIndexes": [
-    {
-      "IndexName": "location-index",
-      "Keys": ["location-index"]
-    }
-  ]
-}
+**Shelters Table:**
+```yaml
+TableName: safehaven-backend-shelters-{stage}
+PartitionKey: shelterId (String)
+GlobalSecondaryIndexes:
+  - StatusIndex:
+      PartitionKey: status (String)
+      ProjectionType: ALL
+ProvisionedThroughput:
+  ReadCapacityUnits: 5
+  WriteCapacityUnits: 5
 ```
 
-**Sample Record:**
+**Sample Shelter Record:**
 ```json
 {
   "shelterId": "shelter-dallas-001",
@@ -508,7 +562,7 @@ WSS    /api/realtime/updates
   },
   "resources": {
     "food": "adequate",
-    "water": "low", 
+    "water": "low",
     "medical": "adequate",
     "lastUpdated": "2025-09-19T14:30:00Z"
   },
@@ -522,60 +576,111 @@ WSS    /api/realtime/updates
 }
 ```
 
-**Table: SafeHaven-Alerts**
-```json
-{
-  "alertId": "alert-001",
-  "shelterId": "shelter-dallas-001",
-  "alertType": "medical-emergency",
-  "priority": "critical",
-  "message": "Medical emergency - need paramedic assistance",
-  "timestamp": "2025-09-19T14:30:00Z",
-  "status": "active",
-  "acknowledgedBy": null,
-  "resolvedAt": null
-}
+**Users Table:**
+```yaml
+TableName: safehaven-backend-users-{stage}
+PartitionKey: userId (String)
+GlobalSecondaryIndexes:
+  - EmailIndex:
+      PartitionKey: email (String)
+      ProjectionType: ALL
+```
+
+**Alerts Table:**
+```yaml
+TableName: safehaven-backend-alerts-{stage}
+PartitionKey: alertId (String)
+GlobalSecondaryIndexes:
+  - ShelterTimestampIndex:
+      PartitionKey: shelterId (String)
+      SortKey: timestamp (Number)
+      ProjectionType: ALL
+```
+
+**Connections Table (WebSocket):**
+```yaml
+TableName: safehaven-backend-connections-{stage}
+PartitionKey: connectionId (String)
+GlobalSecondaryIndexes:
+  - UserIndex:
+      PartitionKey: userId (String)
+      ProjectionType: ALL
+TimeToLiveSpecification:
+  AttributeName: ttl
+  Enabled: true
 ```
 
 #### 5.2.4 Messaging Architecture
 
 **SNS Topic Configuration:**
-```json
-{
-  "TopicName": "SafeHaven-ShelterUpdates",
-  "DisplayName": "Shelter Status Updates",
-  "Subscriptions": [
-    {
-      "Protocol": "sqs",
-      "Endpoint": "SafeHaven-ResponderNotifications-Queue"
-    },
-    {
-      "Protocol": "lambda", 
-      "Endpoint": "SafeHaven-AlertProcessor-Function"
-    }
-  ]
-}
+```yaml
+TopicName: safehaven-backend-shelter-updates-{stage}
+Description: Real-time shelter status updates and alerts
+Subscriptions:
+  - Protocol: sqs
+    Endpoint: ResponderNotifications-Queue
+  - Protocol: lambda
+    Endpoint: WebSocket-Broadcast-Function
 ```
 
-**Message Format:**
+**Message Types and Formats:**
+
+**Shelter Status Update Message:**
 ```json
 {
-  "messageType": "status-update",
-  "shelterId": "shelter-dallas-001",
+  "messageType": "shelter.status.updated",
   "timestamp": "2025-09-19T14:30:00Z",
+  "shelterId": "shelter-dallas-001",
   "data": {
     "capacity": {
-      "current": 234,
-      "available": 266
+      "current": 150,
+      "maximum": 200,
+      "percentage": 75
     },
     "resources": {
       "food": "adequate",
-      "water": "low"
-    }
+      "water": "low",
+      "medical": "adequate",
+      "supplies": "critical"
+    },
+    "status": "available",
+    "lastUpdated": "2025-09-19T14:30:00Z"
   },
   "priority": "normal"
 }
 ```
+
+**Emergency Alert Message:**
+```json
+{
+  "messageType": "shelter.alert.created",
+  "timestamp": "2025-09-19T14:35:00Z",
+  "alertId": "alert-001",
+  "shelterId": "shelter-dallas-001",
+  "data": {
+    "alertType": "medical-emergency",
+    "severity": "critical",
+    "message": "Multiple injured evacuees need immediate medical attention",
+    "location": {
+      "latitude": 32.7767,
+      "longitude": -96.7970,
+      "address": "650 S Griffin St, Dallas, TX 75202"
+    },
+    "contact": {
+      "phone": "+1-555-0123",
+      "name": "John Smith, Shelter Coordinator"
+    },
+    "estimatedResponse": "15-20 minutes"
+  },
+  "priority": "critical"
+}
+```
+
+**WebSocket Message Broadcasting:**
+- Real-time message delivery to all connected dashboard clients
+- Message filtering based on user roles and permissions
+- Connection management with automatic reconnection
+- Message queuing for offline clients
 
 ### 5.3 Security Architecture
 
@@ -784,27 +889,44 @@ npm install -g create-react-app
 **Repository Structure:**
 ```
 SafeHaven/
-├── backend/                 # AWS Lambda functions
-│   ├── functions/
-│   │   ├── auth/
-│   │   ├── shelters/
-│   │   └── alerts/
-│   ├── infrastructure/      # CDK/CloudFormation
-│   └── shared/             # Common utilities
-├── mobile/                 # React Native app
-│   ├── src/
-│   │   ├── screens/
-│   │   ├── components/
-│   │   └── services/
-│   └── __tests__/
-├── dashboard/              # React web app
-│   ├── src/
-│   │   ├── components/
-│   │   ├── pages/
-│   │   └── services/
-│   └── public/
-├── docs/                   # Documentation
-└── demo/                   # Demo materials
+├── backend/                 # Serverless AWS Lambda functions
+│   ├── src/functions/       # Lambda function handlers
+│   │   ├── auth/           # Authentication services
+│   │   ├── shelters/       # Shelter management
+│   │   ├── alerts/         # Alert system
+│   │   ├── websocket/      # Real-time WebSocket handling
+│   │   ├── location/       # AWS Location Service integration
+│   │   └── ai/             # AWS Bedrock AI predictions
+│   ├── src/services/       # Business logic services
+│   ├── src/utils/          # Utility functions and helpers
+│   ├── serverless.yml      # Serverless Framework configuration
+│   ├── package.json        # Node.js dependencies
+│   └── data/               # Demo and test data
+├── mobile/                 # React Native + Expo application
+│   ├── src/screens/        # App screens and navigation
+│   ├── src/components/     # Reusable UI components
+│   ├── src/services/       # API and data services
+│   ├── src/store/          # Redux Toolkit state management
+│   ├── App.tsx             # Main application component
+│   ├── app.json            # Expo configuration
+│   └── package.json        # React Native dependencies
+├── dashboard/              # React + TypeScript web application
+│   ├── src/components/     # UI component library
+│   ├── src/pages/          # Main application pages
+│   ├── src/services/       # Data fetching and APIs
+│   ├── src/hooks/          # Custom React hooks
+│   ├── public/             # Static assets
+│   └── package.json        # React dependencies
+├── shared/                 # Shared TypeScript types package
+│   ├── types/              # Common type definitions
+│   ├── index.ts            # Type exports
+│   └── package.json        # Shared package configuration
+├── scripts/                # Build, deployment, and demo scripts
+│   ├── setup.sh            # Automated project setup
+│   ├── seed-demo-data.js   # Demo data population
+│   └── demo-scenarios.js   # Interactive demo scenarios
+├── docs/                   # Complete project documentation
+└── package.json            # Root workspace configuration
 ```
 
 #### 6.2.2 Code Standards and Best Practices
@@ -1393,34 +1515,118 @@ Implemented in mobile apps to handle network failures gracefully and prevent cas
 #### 9.4.1 Environment Strategy
 
 **Development Environment:**
-- Local development with AWS LocalStack
-- Shared staging environment for integration testing
-- Individual developer AWS accounts for experimentation
+- Local development with Serverless Offline for AWS Lambda simulation
+- LocalStack for local AWS services testing (optional)
+- Individual developer AWS accounts for cloud testing
+- Expo development server for mobile app testing
 
-**Demo Environment:**
+**Staging Environment:**
+- AWS deployment with stage-specific resource naming
+- Continuous integration testing environment
+- Shared team environment for integration validation
+- Demo data pre-populated for testing scenarios
+
+**Production/Demo Environment:**
 - Dedicated AWS account for hackathon demonstration
-- Production-like configuration with monitoring
-- Pre-populated with realistic test data
+- Production-like configuration with CloudWatch monitoring
+- Pre-populated with realistic test data and scenarios
+- Optimized for demo performance and reliability
 
-#### 9.4.2 CI/CD Pipeline (Simplified for Hackathon)
+**Environment Configuration:**
+```yaml
+# Serverless Framework stages
+dev:    # Local and individual development
+  stage: dev
+  region: us-east-2
+  
+staging: # Team integration testing
+  stage: staging
+  region: us-east-2
+  
+prod:   # Demo and production
+  stage: prod
+  region: us-east-2
+```
+
+#### 9.4.2 CI/CD Pipeline (Serverless Framework)
 
 ```yaml
-# GitHub Actions workflow
-name: SafeHaven Deploy
+# Serverless Framework deployment
+name: SafeHaven Serverless Deploy
 on:
   push:
+    branches: [main, develop]
+  pull_request:
     branches: [main]
+
 jobs:
-  deploy:
+  test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Install Dependencies
+        run: |
+          npm ci
+          npm run install:all
+      - name: Run Tests
+        run: |
+          npm run test:backend
+          npm run test:dashboard
+          npm run test:mobile
+      - name: Lint Code
+        run: npm run lint
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-2
+      - name: Install Dependencies
+        run: npm ci
+      - name: Build Backend
+        run: npm run build:backend
       - name: Deploy Backend
-        run: npm run deploy:backend
-      - name: Build Mobile App
-        run: npm run build:mobile
+        run: |
+          cd backend
+          npm run deploy
+      - name: Build Dashboard
+        run: npm run build:dashboard
       - name: Deploy Dashboard
-        run: npm run deploy:dashboard
+        run: |
+          # Deploy to S3 + CloudFront (if configured)
+          cd dashboard
+          npm run deploy
+```
+
+**Manual Deployment Commands:**
+```bash
+# Backend deployment
+cd backend
+npm run deploy              # Deploy to default stage (dev)
+npm run deploy:prod         # Deploy to production stage
+
+# Dashboard deployment
+cd dashboard
+npm run build
+npm run deploy
+
+# Mobile app deployment
+cd mobile
+expo build:android          # Android APK
+expo build:ios              # iOS IPA
 ```
 
 ### 9.5 Post-Hackathon Roadmap

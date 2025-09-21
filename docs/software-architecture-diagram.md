@@ -48,9 +48,11 @@ SafeHaven Connect follows modern cloud-native architecture principles optimized 
 │                        Frontend Layer                           │
 ├─────────────────────────────────────────────────────────────────┤
 │  Mobile App (React Native)  │   Dashboard (React + TypeScript)  │
-│  • iOS/Android Compatible   │   • Modern Web Browsers           │
-│  • Offline Capability       │   • Real-time Updates             │
-│  • Push Notifications       │   • Interactive Maps              │
+│  • React Native 0.72.6      │   • React 18.2.0                  │
+│  • Expo 49.0.0             │   • TypeScript 5.x                │
+│  • Redux Toolkit            │   • Tailwind CSS 3.x             │
+│  • Offline Capability       │   • MapLibre GL JS                │
+│  • Push Notifications       │   • Real-time Updates             │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -68,16 +70,27 @@ SafeHaven Connect follows modern cloud-native architecture principles optimized 
 │                    AWS API Gateway                              │
 │  • REST APIs for CRUD operations                                │
 │  • WebSocket for real-time communication                        │
-│  • Authentication and Rate Limiting                             │
+│  • JWT-based authentication                                     │
+│  • Rate limiting and CORS                                       │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
 │                       Business Logic                            │
 ├─────────────────────────────────────────────────────────────────┤
-│                      AWS Lambda                                 │
+│                   AWS Lambda (Node.js 18.x)                    │
 │  • Authentication Service    │  • Alert Management Service      │
-│  • Shelter Management Service│  • Dashboard Data Service        │
-│  • Notification Service      │  • Integration Service           │
+│  • Shelter Management Service│  • WebSocket Handler            │
+│  • Location Service          │  • AI Prediction Service        │
+│  • Notification Service      │  • Data Aggregation Service     │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                         AI Layer                                │
+├─────────────────────────────────────────────────────────────────┤
+│                     AWS Bedrock                                 │
+│  • Amazon Nova Micro Model  │  • Resource Prediction           │
+│  • Capacity Forecasting     │  • Emergency Response Analysis   │
+│  • Pattern Recognition      │  • Intelligent Alerts            │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -87,6 +100,16 @@ SafeHaven Connect follows modern cloud-native architecture principles optimized 
 │  • Real-time Pub/Sub Messaging                                  │
 │  • Message Queuing and Delivery                                 │
 │  • Fan-out to Multiple Subscribers                              │
+│  • WebSocket Connection Management                              │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                      Location Services                          │
+├─────────────────────────────────────────────────────────────────┤
+│               AWS Location Service                              │
+│  • Map Rendering (Esri)     │  • Place Search & Geocoding      │
+│  • Route Calculation        │  • Geospatial Queries            │
+│  • Custom Map Styles        │  • Location-based Analytics      │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
@@ -94,8 +117,8 @@ SafeHaven Connect follows modern cloud-native architecture principles optimized 
 ├─────────────────────────────────────────────────────────────────┤
 │           Amazon DynamoDB                                       │
 │  • Shelters Table           │  • Alerts Table                   │
-│  • Users Table              │  • Sessions Table                 │
-│  • Audit Logs Table         │  • Configuration Table            │
+│  • Users Table              │  • Connections Table              │
+│  • Global Secondary Indexes │  • Auto-scaling Capacity         │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -606,34 +629,52 @@ dashboard.refresh                     │ Force dashboard refresh
                     │   API Gateway   │
                     │                 │
                     │ • REST APIs     │
-                    │ • WebSocket     │
-                    │ • Auth          │
+                    │ • WebSocket API │
+                    │ • JWT Auth      │
+                    │ • Rate Limiting │
                     └─────────────────┘
                             │
               ┌─────────────┼─────────────┐
               │             │             │
     ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
     │   Lambda    │ │   Lambda    │ │   Lambda    │
-    │    Auth     │ │   Shelter   │ │   Alerts    │
-    │   Service   │ │   Service   │ │   Service   │
+    │  Functions  │ │ WebSocket   │ │    AI       │
+    │ (Node 18.x) │ │  Handlers   │ │ Bedrock     │
     └─────────────┘ └─────────────┘ └─────────────┘
               │             │             │
               └─────────────┼─────────────┘
                             │
-                    ┌─────────────────┐
-                    │   DynamoDB      │
-                    │                 │
-                    │ • Shelters      │
-                    │ • Alerts        │
-                    │ • Users         │
-                    └─────────────────┘
-                            │
-              ┌─────────────┼─────────────┐
-              │             │             │
-    ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
-    │     SNS     │ │     SQS     │ │ CloudWatch  │
-    │ (Pub/Sub)   │ │  (Queues)   │ │(Monitoring) │
-    └─────────────┘ └─────────────┘ └─────────────┘
+        ┌───────────────────┼───────────────────┐
+        │                   │                   │
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  DynamoDB   │     │AWS Location │     │  AWS        │
+│   Tables    │     │   Service   │     │ Bedrock     │
+│             │     │             │     │             │
+│ • Shelters  │     │ • Map       │     │ • Nova      │
+│ • Alerts    │     │ • Geocoding │     │   Micro     │
+│ • Users     │     │ • Places    │     │ • Resource  │
+│ • Sessions  │     │ • Routing   │     │   Predict   │
+└─────────────┘     └─────────────┘     └─────────────┘
+        │
+        └─────────────────┬─────────────────┐
+                          │                 │
+                ┌─────────────┐   ┌─────────────┐
+                │     SNS     │   │ CloudWatch  │
+                │ (Pub/Sub)   │   │(Monitoring) │
+                │             │   │             │
+                │ • Updates   │   │ • Logs      │
+                │ • Alerts    │   │ • Metrics   │
+                │ • Fanout    │   │ • Alarms    │
+                └─────────────┘   └─────────────┘
+                        │
+                ┌─────────────┐
+                │     SQS     │
+                │  (Queues)   │
+                │             │
+                │ • Message   │
+                │   Buffering │
+                │ • DLQ       │
+                └─────────────┘
 ```
 
 ### 6.2 Container and Service Deployment
@@ -646,11 +687,12 @@ dashboard.refresh                     │ Force dashboard refresh
 └─────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│ shelter-auth    │  │ shelter-mgmt    │  │ alert-mgmt      │
+│ auth-functions  │  │ shelter-mgmt    │  │ alert-mgmt      │
 │                 │  │                 │  │                 │
-│ • Register      │  │ • Update Status │  │ • Create Alert  │
-│ • Login         │  │ • Get Shelters  │  │ • Acknowledge   │
-│ • Validate JWT  │  │ • Health Check  │  │ • Resolve       │
+│ • Login         │  │ • Create        │  │ • Create Alert  │
+│ • Register      │  │ • List/Get      │  │ • Acknowledge   │
+│ • Verify Token  │  │ • Update Status │  │ • Resolve       │
+│ • JWT Verify    │  │ • Health Check  │  │ • List Active   │
 │                 │  │                 │  │                 │
 │ Runtime: Node18 │  │ Runtime: Node18 │  │ Runtime: Node18 │
 │ Memory: 256MB   │  │ Memory: 512MB   │  │ Memory: 256MB   │
@@ -658,16 +700,19 @@ dashboard.refresh                     │ Force dashboard refresh
 └─────────────────┘  └─────────────────┘  └─────────────────┘
 
 ┌─────────────────┐  ┌─────────────────┐  ┌─────────────────┐
-│ dashboard-data  │  │ websocket-mgmt  │  │ notification    │
+│ websocket-mgmt  │  │ location-svc    │  │ ai-predictions  │
 │                 │  │                 │  │                 │
-│ • Aggregate     │  │ • Connect       │  │ • Push Notify   │
-│ • Filter        │  │ • Disconnect    │  │ • Email/SMS     │
-│ • Search        │  │ • Broadcast     │  │ • Log Events    │
-│                 │  │                 │  │                 │
-│ Runtime: Node18 │  │ Runtime: Node18 │  │ Runtime: Node18 │
-│ Memory: 512MB   │  │ Memory: 256MB   │  │ Memory: 256MB   │
-│ Timeout: 30s    │  │ Timeout: 30s    │  │ Timeout: 15s    │
-└─────────────────┘  └─────────────────┘  └─────────────────┘
+│ • Connect       │  │ • Search Places │  │ • Resource      │
+│ • Disconnect    │  │ • Get Map Style │  │   Forecasting   │
+│ • Default Route │  │ • Geocoding     │  │ • Capacity      │
+│ • Broadcast     │  │ • Route Calc    │  │   Analysis      │
+│                 │  │                 │  │ • Pattern       │
+│ Runtime: Node18 │  │ Runtime: Node18 │  │   Recognition   │
+│ Memory: 256MB   │  │ Memory: 256MB   │  │                 │
+│ Timeout: 30s    │  │ Timeout: 30s    │  │ Runtime: Node18 │
+└─────────────────┘  └─────────────────┘  │ Memory: 512MB   │
+                                          │ Timeout: 60s    │
+                                          └─────────────────┘
 ```
 
 ### 6.3 Environment Configuration
