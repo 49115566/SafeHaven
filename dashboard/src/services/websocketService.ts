@@ -17,8 +17,8 @@ export class WebSocketService {
   private url: string;
   private token: string | null = null;
   private callbacks: WebSocketServiceCallbacks | null = null;
-  private reconnectTimer: NodeJS.Timeout | null = null;
-  private heartbeatTimer: NodeJS.Timeout | null = null;
+  private reconnectTimer: number | null = null;
+  private heartbeatTimer: number | null = null;
   private connectionState: WebSocketConnectionState = {
     status: 'disconnected',
     reconnectAttempts: 0
