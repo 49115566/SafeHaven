@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="#F3F4F6">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!-- Compact Header -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="#1F2937"
+            android:orientation="horizontal"
+            android:padding="12dp"
+            android:gravity="start|center_vertical">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🏠 SafeHaven"
+                android:textColor="#FFFFFF"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=" | Emergency Command"
+                android:textColor="#D1D5DB"
+                android:textSize="14sp"
+                android:layout_marginStart="4dp" />
+
+        </LinearLayout>
+
+        <!-- Collapsible Status Form -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="16dp"
+            android:background="#FFFFFF"
+            android:orientation="vertical"
+            android:padding="24dp"
+            android:elevation="4dp">
+
+            <!-- Form Header -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#1F2937"
+                android:text="📊 SHELTER STATUS REPORT"
+                android:textColor="#FFFFFF"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:padding="16dp"
+                android:gravity="center"
+                android:layout_marginBottom="20dp" />
+
+            <!-- Form Content (Always Visible) -->
+            <LinearLayout
+                android:id="@+id/formContent"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:visibility="visible">
+
+                <!-- Shelter Capacity -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Shelter Capacity"
+                        android:textColor="#374151"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/capacityValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="25% - AVAILABLE"
+                        android:textColor="#10B981"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <SeekBar
+                    android:id="@+id/capacitySlider"
+                    android:layout_width="match_parent"
+                    android:layout_height="32dp"
+                    android:max="100"
+                    android:progress="25"
+                    android:progressDrawable="@drawable/gradient_slider"
+                    android:thumb="@drawable/simple_thumb"
+                    android:layout_marginBottom="20dp" />
+
+                <!-- Food Supply -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Food Supply"
+                        android:textColor="#374151"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/foodValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="75% - GOOD"
+                        android:textColor="#10B981"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <SeekBar
+                    android:id="@+id/foodSlider"
+                    android:layout_width="match_parent"
+                    android:layout_height="32dp"
+                    android:max="100"
+                    android:progress="75"
+                    android:progressDrawable="@drawable/gradient_slider"
+                    android:thumb="@drawable/simple_thumb"
+                    android:layout_marginBottom="20dp" />
+
+                <!-- Water Supply -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Water Supply"
+                        android:textColor="#374151"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/waterValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="80% - GOOD"
+                        android:textColor="#10B981"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <SeekBar
+                    android:id="@+id/waterSlider"
+                    android:layout_width="match_parent"
+                    android:layout_height="32dp"
+                    android:max="100"
+                    android:progress="80"
+                    android:progressDrawable="@drawable/gradient_slider"
+                    android:thumb="@drawable/simple_thumb"
+                    android:layout_marginBottom="20dp" />
+
+                <!-- Medical Supplies -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:layout_marginBottom="8dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Medical Supplies"
+                        android:textColor="#374151"
+                        android:textSize="18sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:id="@+id/medicalValue"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="85% - EXCELLENT"
+                        android:textColor="#10B981"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                </LinearLayout>
+
+                <SeekBar
+                    android:id="@+id/medicalSlider"
+                    android:layout_width="match_parent"
+                    android:layout_height="32dp"
+                    android:max="100"
+                    android:progress="85"
+                    android:progressDrawable="@drawable/gradient_slider"
+                    android:thumb="@drawable/simple_thumb"
+                    android:layout_marginBottom="24dp" />
+
+                <!-- Submit Button -->
+                <Button
+                    android:id="@+id/submitButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="72dp"
+                    android:backgroundTint="#10B981"
+                    android:text="📡 SEND STATUS UPDATE TO RESCUE CENTER"
+                    android:textColor="#FFFFFF"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:elevation="8dp" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+
+        <!-- Emergency Call Button -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_margin="20dp"
+            android:orientation="vertical">
+
+            <Button
+                android:layout_width="match_parent"
+                android:layout_height="80dp"
+                android:backgroundTint="#DC2626"
+                android:text="🚨 EMERGENCY CALL\nTAP TO CONTACT RESCUE CENTER"
+                android:textColor="#FFFFFF"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:gravity="center" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>
